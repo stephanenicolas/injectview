@@ -4,17 +4,24 @@ buildscript {
 
     // NOTE: This is only needed when developing the plugin!
     mavenLocal()
+
+    // Work around https://code.google.com/p/android/issues/detail?id=69270.
+    def androidHome = System.getenv("ANDROID_HOME")
+    androidHome = androidHome ? androidHome : "/Users/administrateur/android-sdks"
+    maven {
+      url "$androidHome/extras/android/m2repository/"
+    }
   }
 
   dependencies {
     classpath 'com.android.tools.build:gradle:0.12.2'
     classpath 'com.github.stephanenicolas.morpheus:morpheus-plugin:1.0.0'
-    classpath 'com.github.stephanenicolas.loglifecycle:loglifecycle-plugin:1.0.0'
+    classpath 'com.github.stephanenicolas.injectview:injectview-plugin:1.0.0-SNAPSHOT'
   }
 }
 
 apply plugin: 'android'
-apply plugin: 'loglifecycle'
+apply plugin: 'injectview'
 
 
 repositories {

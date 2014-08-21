@@ -1,4 +1,4 @@
-package com.github.stephanenicolas.loglifecycle
+package com.github.stephanenicolas.injectview
 
 import com.github.stephanenicolas.morpheus.AbstractMorpheusPlugin;
 import javassist.build.IClassTransformer;
@@ -7,27 +7,27 @@ import org.gradle.api.Project;
 /**
  * @author SNI
  */
-public class LogLifeCyclePlugin extends AbstractMorpheusPlugin {
+public class InjectViewPlugin extends AbstractMorpheusPlugin {
 
   @Override
   public IClassTransformer[] getTransformers(Project project) {
-    return new LogLifeCycleProcessor();
+    return new InjectViewProcessor();
   }
 
   @Override
   protected void configure(Project project) {
     project.dependencies {
-      provided 'com.github.stephanenicolas.loglifecycle:loglifecycle-annotations:1.0.1-SNAPSHOT'
+      provided 'com.github.stephanenicolas.injectview:injectview-annotations:1.0.0-SNAPSHOT'
     }
   }
 
   @Override
   protected Class getPluginExtension() {
-    LogLifeCyclePluginExtension
+    InjectViewPluginExtension
   }
 
   @Override
   protected String getExtension() {
-    "loglifecycle"
+    "injectview"
   }
 }

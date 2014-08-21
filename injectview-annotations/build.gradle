@@ -6,7 +6,7 @@ sourceCompatibility = JavaVersion.VERSION_1_6
 
 modifyPom {
   project {
-    name "Loglifecycle Annotations"
+    name "InjectView Annotations"
     description POM_DESCRIPTION
     url POM_URL
 

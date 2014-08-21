@@ -29,18 +29,18 @@ task wrapper(type: Wrapper) {
 
 task cleanExample(type: Exec) {
   executable = '../gradlew'
-  workingDir = project.file('loglifecycle-example')
+  workingDir = project.file('injectview-example')
   args = [ 'clean' ]
 }
 
 task assembleExample(type: Exec) {
   executable = '../gradlew'
-  workingDir = project.file('loglifecycle-example')
+  workingDir = project.file('injectview-example')
   args = [ 'assemble' ]
 }
 
 task installExample(type: Exec) {
   executable = '../gradlew'
-  workingDir = project.file('loglifecycle-example')
+  workingDir = project.file('injectview-example')
   args = [ 'installDebug' ]
 }
