@@ -1,0 +1,46 @@
+buildscript {
+  repositories {
+    mavenCentral()
+    jcenter()
+  }
+
+  dependencies {
+    classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.7'
+    classpath 'com.android.tools.build:gradle:0.12.2'
+  }
+}
+
+logging.captureStandardOutput LogLevel.INFO
+
+allprojects {
+  repositories {
+    mavenCentral()
+  }
+
+  group = GROUP
+  version = VERSION_NAME
+
+  apply plugin: 'maven'
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '1.12'
+}
+
+task cleanExample(type: Exec) {
+  executable = '../gradlew'
+  workingDir = project.file('loglifecycle-example')
+  args = [ 'clean' ]
+}
+
+task assembleExample(type: Exec) {
+  executable = '../gradlew'
+  workingDir = project.file('loglifecycle-example')
+  args = [ 'assemble' ]
+}
+
+task installExample(type: Exec) {
+  executable = '../gradlew'
+  workingDir = project.file('loglifecycle-example')
+  args = [ 'installDebug' ]
+}

@@ -1,0 +1,1 @@
+include ':injectview-annotations', ':injectview-plugin'
