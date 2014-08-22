@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config;
  */
 @RunWith(InjectViewTestRunner.class)
 @Config(manifest= Config.NONE)
-public class InjectViewProcessorWithActivityTest {
+public class InjectViewProcessorForViewsWithActivityTest {
   public static final String VIEW_TAG = "TAG";
   public static final int VIEW_ID = 101;
   public static final int CONTENT_VIEW_ID = 100;

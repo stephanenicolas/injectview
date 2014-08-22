@@ -283,8 +283,23 @@ public class  InjectViewProcessor implements IClassTransformer {
   private String injectFragmentStatements(List<CtField> fragments, String root, boolean useChildFragmentManager) throws ClassNotFoundException, NotFoundException {
     StringBuffer buffer = new StringBuffer();
     for (CtField field : fragments) {
-      int id = ((InjectFragment) field.getAnnotation(InjectFragment.class)).value();
-      String tag = ((InjectFragment) field.getAnnotation(InjectFragment.class)).tag();
+      Object annotation = field.getAnnotation(InjectFragment.class);
+      //must be accessed by introspection as I get a Proxy during tests.
+      //this proxy comes from Robolectric
+      Class annotionClass = annotation.getClass();
+
+      //workaround for robolectric
+      //https://github.com/robolectric/robolectric/pull/1240
+      int id = 0;
+      String tag = "";
+      try {
+        Method method = annotionClass.getMethod("value");
+        id = (Integer) method.invoke(annotation);
+        method = annotionClass.getMethod("tag");
+        tag = (String) method.invoke(annotation);
+      } catch (Exception e) {
+        throw new RuntimeException("How can we get here ?");
+      }
       boolean isUsingId = id != -1;
       buffer.append(field.getName());
       buffer.append(" = ");

@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(InjectViewTestRunner.class)
 @Config(manifest= Config.NONE)
-public class InjectViewProcessorWithFragmentTest {
+public class InjectViewProcessorForViewsWithFragmentTest {
   public static final String FRAGMENT_TAG = "TAG";
   public static final String FRAGMENT_TAG2 = "TAG2";
   public static final String FRAGMENT_TAG3 = "TAG3";
