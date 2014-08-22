@@ -1,7 +1,6 @@
 package com.github.stephanenicolas.injectview;
 
 import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -35,13 +34,16 @@ public class InjectViewProcessorForViewsWithOtherTest {
     TestActivityWithId activity = Robolectric.buildActivity(TestActivityWithId.class)
         .create()
         .get();
-    assertNotNull(activity.viewWithoutOnFinishInflate.text1);
-    assertThat(activity.viewWithoutOnFinishInflate.text1.getId(), is(VIEW_ID));
+    assertNotNull(activity.pojoWithViewContructor.text1);
+    assertThat(activity.pojoWithViewContructor.text1.getId(), is(VIEW_ID));
+    assertNotNull(activity.pojoWithActivityConstructor.text1);
+    assertThat(activity.pojoWithActivityConstructor.text1.getId(), is(VIEW_ID));
   }
 
 
   public static class TestActivityWithId extends Activity {
-    private TestViewWithIdWithoutOnFinishInflate viewWithoutOnFinishInflate;
+    private PojoWithViewContructor pojoWithViewContructor;
+    private PojoWithActivityConstructor pojoWithActivityConstructor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,17 +52,32 @@ public class InjectViewProcessorForViewsWithOtherTest {
       final TextView text1 = new TextView(this);
       text1.setId(VIEW_ID);
       layout.addView(text1);
-      viewWithoutOnFinishInflate = new TestViewWithIdWithoutOnFinishInflate(layout);
+      pojoWithViewContructor = new PojoWithViewContructor(layout);
+      pojoWithActivityConstructor = new PojoWithActivityConstructor(this);
       setContentView(layout);
     }
 
+    @Override public View findViewById(int id) {
+      final TextView text1 = new TextView(this);
+      text1.setId(VIEW_ID);
+      return text1;
+    }
   }
 
-  public static class TestViewWithIdWithoutOnFinishInflate {
+  public static class PojoWithViewContructor {
     @InjectView(VIEW_ID)
     protected TextView text1;
 
-    public TestViewWithIdWithoutOnFinishInflate(View view) {
+    public PojoWithViewContructor(View view) {
+      text1.setText("");
+    }
+  }
+
+  public static class PojoWithActivityConstructor {
+    @InjectView(VIEW_ID)
+    protected TextView text1;
+
+    public PojoWithActivityConstructor(Activity activity) {
       text1.setText("");
     }
   }
