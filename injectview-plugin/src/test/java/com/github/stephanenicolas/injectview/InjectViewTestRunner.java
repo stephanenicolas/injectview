@@ -38,7 +38,7 @@ public class InjectViewTestRunner extends RobolectricTestRunner {
               processor.applyTransformations(dummyClass);
               byte[] bytes = dummyClass.toBytecode();
               System.out.println("Size of weaved byte code :" + bytes.length);
-              FileOutputStream fileOutputStream = new FileOutputStream("/tmp/bytes.class");
+              FileOutputStream fileOutputStream = new FileOutputStream("/tmp/" + className + ".class");
               fileOutputStream.write(bytes);
               fileOutputStream.close();
               return bytes;

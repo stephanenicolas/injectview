@@ -254,7 +254,10 @@ public class  InjectViewProcessor implements IClassTransformer {
 
   private int getLayoutId(final CtClass classToTransform) {
     try {
-      return ((ContentView) classToTransform.getAnnotation(ContentView.class)).value();
+      Object annotation = classToTransform.getAnnotation(ContentView.class);
+      Class clazz = annotation.getClass();
+      Method method = clazz.getMethod("value");
+      return (Integer) method.invoke(annotation);
     } catch (Exception e) {
       return -1;
     }
