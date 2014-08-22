@@ -51,6 +51,26 @@ public class InjectViewProcessorTest {
     assertThat((String) activity.text1.getTag(), is(TestActivityWithTag.VIEW_TAG));
   }
 
+  @Test
+  public void shouldInjectView_whenUsingAtContentView_withId() {
+    TestActivityWithContentViewAndId activity = Robolectric.buildActivity(TestActivityWithContentViewAndId.class)
+        .create()
+        .get();
+    assertNotNull(activity.text1);
+    assertThat(activity.text1.getId(), is(TestActivityWithContentViewAndId.VIEW_ID));
+  }
+
+  @Test
+  public void shouldInjectView_whenUsingAtContentView_withId_withoutOnCreate() {
+    TestActivityWithContentViewAndIdWithoutOnCreate activity = Robolectric.buildActivity(TestActivityWithContentViewAndIdWithoutOnCreate.class)
+        .create()
+        .get();
+    assertNotNull(activity.text1);
+    assertThat(activity.text1.getId(), is(TestActivityWithContentViewAndIdWithoutOnCreate.VIEW_ID));
+  }
+
+
+
   public static class TestActivityWithId extends Activity {
     public static final int VIEW_ID = 101;
     @InjectView(VIEW_ID)
@@ -92,6 +112,37 @@ public class InjectViewProcessorTest {
 
     @Override public Window getWindow() {
       return super.getWindow();
+    }
+  }
+
+  @ContentView(100)
+  public static class TestActivityWithContentViewAndId extends Activity {
+    public static final int VIEW_ID = 101;
+    @InjectView(VIEW_ID)
+    protected TextView text1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
+    }
+
+    @Override public View findViewById(int id) {
+        final TextView text1 = new TextView(this);
+        text1.setId(id);
+        return text1;
+    }
+  }
+
+  @ContentView(100)
+  public static class TestActivityWithContentViewAndIdWithoutOnCreate extends Activity {
+    public static final int VIEW_ID = 101;
+    @InjectView(VIEW_ID)
+    protected TextView text1;
+
+    @Override public View findViewById(int id) {
+      final TextView text1 = new TextView(this);
+      text1.setId(id);
+      return text1;
     }
   }
 }
