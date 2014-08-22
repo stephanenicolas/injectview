@@ -44,6 +44,35 @@ dependencies {
   compile 'org.projectlombok:lombok:1.14.2'
   compile 'com.google.android:android:4.4.2_r2'
   compile 'com.android.support:support-v4:19.1.0'
+
+  testCompile "org.bouncycastle:bcprov-jdk15:$BOUNCYCASTLE_VERSION"
+
+  testCompile("org.robolectric:robolectric:$ROBOLECTRIC_VERSION") {
+    exclude module: 'classworlds'
+    exclude module: 'maven-artifact'
+    exclude module: 'maven-artifact-manager'
+    exclude module: 'maven-error-diagnostics'
+    exclude module: 'maven-model'
+    exclude module: 'maven-plugin-registry'
+    exclude module: 'maven-profile'
+    exclude module: 'maven-project'
+    exclude module: 'maven-settings'
+    exclude module: 'nekohtml'
+    exclude module: 'plexus-container-default'
+    exclude module: 'plexus-interpolation'
+    exclude module: 'plexus-utils'
+    exclude module: 'wagon-file'
+    exclude module: 'wagon-http-lightweight'
+    exclude module: 'wagon-http-shared'
+    exclude module: 'wagon-provider-api'
+    exclude module: 'commons-logging'
+    exclude module: 'httpclient'
+    exclude group: 'com.google.android'
+  }
+  testCompile("org.apache.httpcomponents:httpclient:$HTTP_CLIENT_VERSION")
+  testCompile("commons-logging:commons-logging:$COMMONS_LOGGING_VERSION")
+  testCompile("com.google.android:android-test:$ANDROID_TEST_VERSION")
+  testCompile "org.easymock:easymock:$EASY_MOCK_VERSION"
 }
 
 modifyPom {
@@ -73,6 +102,12 @@ modifyPom {
       }
     }
   }
+}
+
+//http://stackoverflow.com/a/14947906/693752
+tasks.withType(Test) {
+  scanForTestClasses = false
+  include "**/*Test.class" // whatever Ant pattern matches your test class files
 }
 
 

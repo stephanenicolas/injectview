@@ -83,27 +83,20 @@ dependencies {
 }
 
 import com.github.stephanenicolas.injectview.InjectViewProcessor;
-import javassist.build.IClassTransformer;
 
 gradle.projectsEvaluated {
+  //testDebug should trigger transformation of source classes (not tests)
   tasks.withType(JavaCompile) { task ->
     if( task.name.contains('Test')) {
-      println "Evaluating " + task.name
       def matcher = task.name =~ "Test(.*)Java"
       String variantName = matcher[0][1]
       String transformerClassName = InjectViewProcessor.class.getSimpleName()
       String transformationDir = "${project.buildDir}/intermediates/transformations/transform${transformerClassName}${variantName}"
 
       def transformTask = "transform${transformerClassName}${variantName}"
-      println "Checking " + transformTask
-      try {
-        task.dependsOn(project.tasks.getByName(transformTask))
-      } catch (Exception e) {
-      }
-
-
       def copyTransformedTask = "copyTransformed${transformerClassName}${variantName}"
       try {
+        task.dependsOn(project.tasks.getByName(transformTask))
         task.dependsOn(project.tasks.getByName(copyTransformedTask))
       } catch (Exception e) {
       }

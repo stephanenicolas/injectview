@@ -52,7 +52,7 @@ public class InjectViewProcessor implements IClassTransformer {
   @Override
   public void applyTransformations(final CtClass classToTransform) throws JavassistBuildException {
     // Actually you must test if it exists, but it's just an example...
-    log.debug("Analysing " + classToTransform.getSimpleName());
+    log.debug("Analyzing " + classToTransform.getSimpleName());
     boolean isActivity = isActivity(classToTransform);
     boolean isFragment = isFragment(classToTransform);
     boolean isSupportFragment = isSupportFragment(classToTransform);
