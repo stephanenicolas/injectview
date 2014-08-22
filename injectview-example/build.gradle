@@ -82,6 +82,11 @@ dependencies {
   testCompile "org.easymock:easymock:$EASY_MOCK_VERSION"
 }
 
+
+
+
+//this is needed if you use robolectric and want to use injection of views in test.
+//TODO make it easier
 import com.github.stephanenicolas.injectview.InjectViewProcessor;
 
 gradle.projectsEvaluated {
