@@ -306,14 +306,19 @@ public class  InjectViewProcessor implements IClassTransformer {
     return buffer.toString();
   }
 
-  private String injectViewStatements(List<CtField> viewsToInject, String root) throws ClassNotFoundException, NotFoundException {
+  private String injectViewStatements(List<CtField> viewsToInject, CtClass targetClazz) throws ClassNotFoundException, NotFoundException {
+    boolean isActivity = isActivity(targetClazz);
+    boolean isFragment = isFragment(targetClazz);
+    boolean isSupportFragment = isSupportFragment(targetClazz);
+    boolean isView = isView(targetClazz);
+
     StringBuffer buffer = new StringBuffer();
     for (CtField field : viewsToInject) {
       Object annotation = field.getAnnotation(InjectView.class);
       //must be accessed by introspection as I get a Proxy during tests.
-      //TODO find where this proxy comes from. It is not there in normal builds
-      // (out of robolectric tests...)
+      //this proxy comes from Robolectric
       Class annotionClass = annotation.getClass();
+
       //workaround for robolectric
       //https://github.com/robolectric/robolectric/pull/1240
       int id = 0;
@@ -334,7 +339,16 @@ public class  InjectViewProcessor implements IClassTransformer {
       buffer.append(field.getType().getName());
       buffer.append(')');
 
-      String findViewString = isUsingId ? "findViewById(" + id + ")" : "getWindow().getDecorView().findViewWithTag(\"" + tag + "\")";
+      String root = "";
+      String findViewString = "";
+      if (isActivity) {
+        //in on create
+        root = "this";
+        findViewString = isUsingId ? "findViewById(" + id + ")" : "getWindow().getDecorView().findViewWithTag(\"" + tag + "\")";
+      } else {
+        root = "$1";
+        findViewString = isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
+      }
       buffer.append(root + "." + findViewString + ";\n");
     }
     return buffer.toString();
@@ -383,9 +397,9 @@ public class  InjectViewProcessor implements IClassTransformer {
     }
     if (!views.isEmpty()) {
       if (isActivity || isView) {
-        buffer.append(injectViewStatements(views, "this"));
+        buffer.append(injectViewStatements(views, clazz));
       } else if (isFragment || isSupportFragment ) {
-        buffer.append(injectViewStatements(views, "$1"));
+        buffer.append(injectViewStatements(views, clazz));
       }
     }
     if (!fragments.isEmpty()) {
@@ -414,7 +428,7 @@ public class  InjectViewProcessor implements IClassTransformer {
       buffer.append(injectContentView(layoutId));
     }
     if (!views.isEmpty()) {
-      buffer.append(injectViewStatements(views, "$1"));
+      buffer.append(injectViewStatements(views, clazz));
     }
     if (!fragments.isEmpty()) {
       if (isActivity) {

@@ -136,7 +136,6 @@ public class InjectViewProcessorWithActivityTest {
       text.setTag(VIEW_TAG);
       setContentView(root);
     }
-
   }
 
   @ContentView(CONTENT_VIEW_ID)
