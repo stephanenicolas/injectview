@@ -10,6 +10,8 @@ buildscript {
 
   dependencies {
     classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.7'
+    //for tests
+    classpath 'com.darylteo.gradle:javassist-plugin:0.3.0'
   }
 }
 
@@ -45,6 +47,7 @@ dependencies {
   compile 'com.google.android:android:4.4.2_r2'
   compile 'com.android.support:support-v4:19.1.0'
 
+  //--TESTS
   testCompile "org.bouncycastle:bcprov-jdk15:$BOUNCYCASTLE_VERSION"
 
   testCompile("org.robolectric:robolectric:$ROBOLECTRIC_VERSION") {
@@ -104,10 +107,60 @@ modifyPom {
   }
 }
 
+//as we want to have non test classes in test source tree
 //http://stackoverflow.com/a/14947906/693752
 tasks.withType(Test) {
   scanForTestClasses = false
   include "**/*Test.class" // whatever Ant pattern matches your test class files
 }
 
-
+//import com.github.stephanenicolas.injectview.InjectViewProcessor;
+//
+////run class transformer on test classes
+//gradle.projectsEvaluated {
+//  //testDebug should trigger transformation of source classes (not tests)
+//  tasks.withType(JavaCompile) { task ->
+//    if( task.name.contains('Test')) {
+//      def matcher = "Test"
+//      String variantName = matcher[0][1]
+//      String transformerClassName = InjectViewProcessor.class.getSimpleName()
+//      //TODO remove
+//      String transformationDir = "${project.buildDir}/intermediates/transformations/transform${transformerClassName}${variantName}"
+//
+//      def transformTask = "transform${transformerClassName}${variantName}"
+//      project.task(transformTask, type: TransformationTask) {
+//        description = "Transform a file using ${transformerClassName}"
+//        destinationDir = project.file(transformationDir)
+//        from ("${javaCompile.destinationDir.path}")
+//        transformation = new InjectViewProcessor();
+//        outputs.upToDateWhen {
+//          false
+//        }
+//        eachFile {
+//          log.debug(LOG_TAG, "Transformed:" + it.path)
+//        }
+//      }
+//
+//      def copyTransformedTask = "copyTransformed${transformerClassName}${variantName}"
+//      project.task(copyTransformedTask, type: Copy) {
+//        description = "Copy transformed file to build dir for ${transformerClassName}"
+//        from (transformationDir)
+//        into ("${javaCompile.destinationDir.path}")
+//        outputs.upToDateWhen {
+//          false
+//        }
+//        eachFile {
+//          log.debug(LOG_TAG, "Copied into build:" + it.path)
+//        }
+//      }
+//
+//      try {
+//        task.dependsOn(project.tasks.getByName(transformTask))
+//        task.dependsOn(project.tasks.getByName(copyTransformedTask))
+//      } catch (Exception e) {
+//      }
+//    }
+//
+//  }
+//}
+//

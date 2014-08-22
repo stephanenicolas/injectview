@@ -4,7 +4,12 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.view.View;
 import com.github.stephanenicolas.afterburner.AfterBurner;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import javassist.CannotCompileException;
@@ -27,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author SNI
  */
 @Slf4j
-public class InjectViewProcessor implements IClassTransformer {
+public class  InjectViewProcessor implements IClassTransformer {
 
   @Override
   public boolean shouldTransform(CtClass candidateClass) throws JavassistBuildException {
@@ -101,6 +106,9 @@ public class InjectViewProcessor implements IClassTransformer {
       }
       InjectorEditor injectorEditor = new InjectorEditor(classToTransform, fragments, views, layoutId, insertionMethod);
       onCreateMethod.instrument(injectorEditor);
+      if (!injectorEditor.isSuccessful) {
+        throw new CannotCompileException("Transformation failed.");
+      }
     } else {
       log.debug("Does not have onCreate method yet");
       classToTransform.addMethod(
@@ -123,6 +131,9 @@ public class InjectViewProcessor implements IClassTransformer {
     if (onViewCreatedMethod != null) {
       InjectorEditor injectorEditor = new InjectorEditor(classToTransform, fragments, views, -1, "onViewCreated");
       onViewCreatedMethod.instrument(injectorEditor);
+      if (!injectorEditor.isSuccessful) {
+        throw new CannotCompileException("Transformation failed.");
+      }
     } else {
       classToTransform.addMethod(CtNewMethod.make(createOnViewCreatedMethod(classToTransform, views, fragments), classToTransform));
     }
@@ -132,6 +143,9 @@ public class InjectViewProcessor implements IClassTransformer {
     if (onDestroyViewMethod != null) {
       InjectorEditor injectorEditor = new InjectorEditor(classToTransform, fragments, views, -1, "onDestroyView");
       onDestroyViewMethod.instrument(injectorEditor);
+      if (!injectorEditor.isSuccessful) {
+        throw new CannotCompileException("Transformation failed.");
+      }
     } else {
       classToTransform.addMethod(CtNewMethod.make(createOnDestroyViewMethod(classToTransform, views), classToTransform));
     }
@@ -149,6 +163,9 @@ public class InjectViewProcessor implements IClassTransformer {
     if (onFinishInflate != null) {
       InjectorEditor injectorEditor = new InjectorEditor(classToTransform, new ArrayList<CtField>(), views, -1, "onFinishInflate");
       onFinishInflate.instrument(injectorEditor);
+      if (!injectorEditor.isSuccessful) {
+        throw new CannotCompileException("Transformation failed.");
+      }
     } else {
       classToTransform.addMethod(CtNewMethod.make(createOnFinishInflateMethod(classToTransform, views), classToTransform));
     }
@@ -289,8 +306,25 @@ public class InjectViewProcessor implements IClassTransformer {
   private String injectViewStatements(List<CtField> viewsToInject, String root) throws ClassNotFoundException, NotFoundException {
     StringBuffer buffer = new StringBuffer();
     for (CtField field : viewsToInject) {
-      int id = ((InjectView) field.getAnnotation(InjectView.class)).value();
-      String tag = ((InjectView) field.getAnnotation(InjectView.class)).tag();
+      Object annotation = field.getAnnotation(InjectView.class);
+      //must be accessed by introspection as I get a Proxy during tests.
+      //TODO find where this proxy comes from. It is not there in normal builds
+      // (out of robolectric tests...)
+      Class annotionClass = annotation.getClass();
+      int id = 0;
+      String tag = "";
+      try {
+        Method method = annotionClass.getMethod("value");
+        id = (Integer) method.invoke(annotation);
+        method = annotionClass.getMethod("tag");
+        tag = (String) method.invoke(annotation);
+      } catch (IllegalAccessException e) {
+        e.printStackTrace();
+      } catch (InvocationTargetException e) {
+        e.printStackTrace();
+      } catch (NoSuchMethodException e) {
+        e.printStackTrace();
+      }
       boolean isUsingId = id != -1;
 
       buffer.append(field.getName());
@@ -435,6 +469,7 @@ public class InjectViewProcessor implements IClassTransformer {
     private final List<CtField> views;
     private final int layoutId;
     private String insertionMethod;
+    private boolean isSuccessful = true;
 
     private InjectorEditor(CtClass classToTransform, List<CtField> fragments, List<CtField> views, int layoutId, String insertionMethod) {
       this.classToTransform = classToTransform;
@@ -451,8 +486,8 @@ public class InjectViewProcessor implements IClassTransformer {
         if (m.getMethodName().equals(insertionMethod)) {
           log.debug("insertion method " + m.getMethodName());
 
-          String string;
-          string = "$_ = $proceed($$);\n" + createInjectedBody(m.getEnclosingClass(), views, fragments, layoutId);
+          String string = "$_ = $proceed($$);\n" +
+              createInjectedBody(m.getEnclosingClass(), views, fragments, layoutId);
           log.debug("Injected : " + string);
 
           m.replace(string);
@@ -460,10 +495,10 @@ public class InjectViewProcessor implements IClassTransformer {
           markAfterBurnerActiveInClass(classToTransform);
           log.info("Class {} has been enhanced.", classToTransform.getName());
         }
-      } catch (ClassNotFoundException e) {
-        throw new CannotCompileException("Class not found during class transformation", e);
-      } catch (NotFoundException e) {
-        throw new CannotCompileException("Annotation not found during class transformation", e);
+      } catch (Throwable e) {
+        isSuccessful = false;
+        log.error("A problem occured during transformation",e);
+        throw new CannotCompileException("A problem occured during transformation", e);
       }
     }
 
