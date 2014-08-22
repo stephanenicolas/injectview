@@ -78,7 +78,7 @@ public class  InjectViewProcessor implements IClassTransformer {
         // in other classes (like view holders)
         injectStuffInClass(classToTransform);
       }
-    } catch (Exception e) {
+    } catch (Throwable e) {
       new JavassistBuildException(e);
     }
   }
@@ -111,9 +111,11 @@ public class  InjectViewProcessor implements IClassTransformer {
       }
     } else {
       log.debug("Does not have onCreate method yet");
+      String onCreateMethodFull = createOnCreateMethod(classToTransform, views, fragments, layoutId);
       classToTransform.addMethod(
-          CtNewMethod.make(createOnCreateMethod(classToTransform, views, fragments, layoutId),
+          CtNewMethod.make(onCreateMethodFull,
               classToTransform));
+      log.debug("Inserted " + onCreateMethodFull);
     }
     classToTransform.detach();
     injectStuffInActivity(classToTransform.getSuperclass());
@@ -308,6 +310,7 @@ public class  InjectViewProcessor implements IClassTransformer {
       buffer.append(fragmentType.getName());
       buffer.append(')');
       boolean isUsingSupport = !fragmentType.subclassOf(ClassPool.getDefault().get(Fragment.class.getName()));
+
       String getFragmentManagerString;
       if (useChildFragmentManager) {
         getFragmentManagerString = "getChildFragmentManager()";
@@ -315,7 +318,7 @@ public class  InjectViewProcessor implements IClassTransformer {
         getFragmentManagerString = "getSupportFragmentManager()";
       else
         getFragmentManagerString = "getFragmentManager()";
-      String getFragmentString = isUsingId ? ".findFragmentById(" + id + ")" : ".findFragmentByTag(" + tag + ")";
+      String getFragmentString = isUsingId ? ".findFragmentById(" + id + ")" : ".findFragmentByTag(\"" + tag + "\")";
       buffer.append(root + "." + getFragmentManagerString + getFragmentString + ";\n");
     }
     return buffer.toString();
@@ -420,6 +423,7 @@ public class  InjectViewProcessor implements IClassTransformer {
         buffer.append(injectViewStatements(views, clazz));
       }
     }
+
     if (!fragments.isEmpty()) {
       if (isActivity) {
         buffer.append(injectFragmentStatements(fragments, "this", false));
@@ -429,6 +433,7 @@ public class  InjectViewProcessor implements IClassTransformer {
         buffer.append(injectFragmentStatements(fragments, "$1", true));
       }
     }
+
     String string = buffer.toString();
     return string;
   }

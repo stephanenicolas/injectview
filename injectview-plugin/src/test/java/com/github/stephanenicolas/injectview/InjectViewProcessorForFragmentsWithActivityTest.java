@@ -22,18 +22,22 @@ import static org.junit.Assert.assertThat;
 @Config(manifest= Config.NONE)
 public class InjectViewProcessorForFragmentsWithActivityTest {
   public static final String VIEW_TAG = "TAG";
+  public static final String VIEW_TAG2 = "TAG2";
   public static final int VIEW_ID = 101;
+  public static final int VIEW_ID2 = 102;
   public static final int CONTENT_VIEW_ID = 100;
 
   private InjectViewProcessor processor = new InjectViewProcessor();
 
   @Test
-  public void shouldInjectView_whenUsingSetContentView_withId() {
+  public void shouldInjectFragment_whenUsingSetContentView() {
     TestActivityWithContentView activity = Robolectric.buildActivity(TestActivityWithContentView.class)
         .create()
         .get();
     assertNotNull(activity.fragment);
     assertThat(activity.fragment.getId(), is(VIEW_ID));
+    assertNotNull(activity.fragment2);
+    assertThat(activity.fragment2.getTag(), is(VIEW_TAG2));
   }
 
 
@@ -41,6 +45,8 @@ public class InjectViewProcessorForFragmentsWithActivityTest {
   public static class TestActivityWithContentView extends Activity {
     @InjectFragment(VIEW_ID)
     protected Fragment fragment;
+    @InjectFragment(tag=VIEW_TAG2)
+    protected Fragment fragment2;
 
     protected LinearLayout root;
 
@@ -48,6 +54,9 @@ public class InjectViewProcessorForFragmentsWithActivityTest {
       FragmentManager fragmentManager = super.getFragmentManager();
       if (fragmentManager.findFragmentById(VIEW_ID) == null ) {
         fragmentManager.beginTransaction().add(VIEW_ID, new DummyFragment(), VIEW_TAG).commit();
+      }
+      if (fragmentManager.findFragmentByTag(VIEW_TAG2) == null ) {
+        fragmentManager.beginTransaction().add(VIEW_ID2, new DummyFragment(), VIEW_TAG2).commit();
       }
       fragmentManager.executePendingTransactions();
       return fragmentManager;
@@ -60,6 +69,9 @@ public class InjectViewProcessorForFragmentsWithActivityTest {
       LinearLayout fragmentHost = new LinearLayout(this);
       fragmentHost.setId(VIEW_ID);
       root.addView(fragmentHost);
+      LinearLayout fragmentHost2 = new LinearLayout(this);
+      fragmentHost2.setId(VIEW_ID2);
+      root.addView(fragmentHost2);
       setContentView(root);
     }
   }
