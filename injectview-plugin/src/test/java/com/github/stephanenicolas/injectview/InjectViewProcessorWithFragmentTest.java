@@ -25,6 +25,7 @@ import static org.junit.Assert.assertThat;
 public class InjectViewProcessorWithFragmentTest {
   public static final String FRAGMENT_TAG = "TAG";
   public static final String FRAGMENT_TAG2 = "TAG2";
+  public static final String FRAGMENT_TAG3 = "TAG3";
   public static final int VIEW_ID = 101;
 
   private InjectViewProcessor processor = new InjectViewProcessor();
@@ -49,17 +50,29 @@ public class InjectViewProcessorWithFragmentTest {
     assertThat(activity.testFragmentWithOnViewCreated.text1.getId(), is(VIEW_ID));
   }
 
+  @Test
+  public void shouldInjectView_whenUsingAtContentView_withId_withInheritance() {
+    TestActivity
+        activity = Robolectric.buildActivity(TestActivity.class)
+        .create()
+        .get();
+    assertNotNull(activity.testFragmentWithInheritance.text1);
+    assertThat(activity.testFragmentWithInheritance.text1.getId(), is(VIEW_ID));
+  }
+
 
 
   public static class TestActivity extends Activity {
     TestFragmentWithoutOnViewCreated testFragmentWithoutOnViewCreated = new TestFragmentWithoutOnViewCreated();
     TestFragmentWithOnViewCreated testFragmentWithOnViewCreated = new TestFragmentWithOnViewCreated();
+    TestFragmentWithInheritance testFragmentWithInheritance = new TestFragmentWithInheritance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
       getFragmentManager().beginTransaction().add(testFragmentWithoutOnViewCreated, FRAGMENT_TAG).commit();
       getFragmentManager().beginTransaction().add(testFragmentWithOnViewCreated, FRAGMENT_TAG2).commit();
+      getFragmentManager().beginTransaction().add(testFragmentWithInheritance, FRAGMENT_TAG3).commit();
     }
 
     @Override
@@ -106,5 +119,8 @@ public class InjectViewProcessorWithFragmentTest {
     @Override public void onViewCreated(View view, Bundle savedInstanceState) {
       super.onViewCreated(view, savedInstanceState);
     }
+  }
+
+  public static class TestFragmentWithInheritance extends TestFragmentWithoutOnViewCreated {
   }
 }
