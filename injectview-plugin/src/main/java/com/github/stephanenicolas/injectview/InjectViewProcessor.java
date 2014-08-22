@@ -4,11 +4,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.view.View;
 import com.github.stephanenicolas.afterburner.AfterBurner;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,7 +101,10 @@ public class  InjectViewProcessor implements IClassTransformer {
         // in other classes (like view holders)
         injectStuffInClass(classToTransform);
       }
+      log.debug("Class successfully transformed: " + classToTransform.getSimpleName());
+
     } catch (Throwable e) {
+      log.error("Impossible to transform class." + classToTransform.getName(), e);
       new JavassistBuildException(e);
     }
   }
@@ -336,6 +335,7 @@ public class  InjectViewProcessor implements IClassTransformer {
       CtClass fragmentType = field.getType();
       buffer.append(fragmentType.getName());
       buffer.append(')');
+
       boolean isUsingSupport = !fragmentType.subclassOf(ClassPool.getDefault().get(Fragment.class.getName()));
 
       String getFragmentManagerString;
@@ -399,6 +399,57 @@ public class  InjectViewProcessor implements IClassTransformer {
       }
       buffer.append(root + "." + findViewString + ";\n");
     }
+    log.debug("Inserted :" + buffer.toString());
+    return buffer.toString();
+  }
+
+  private String injectViewStatementsForParam(List<CtField> viewsToInject, CtClass targetClazz) throws ClassNotFoundException, NotFoundException {
+    boolean isActivity = isActivity(targetClazz);
+    boolean isView = isView(targetClazz);
+
+    StringBuffer buffer = new StringBuffer();
+    for (CtField field : viewsToInject) {
+      Object annotation = field.getAnnotation(InjectView.class);
+      //must be accessed by introspection as I get a Proxy during tests.
+      //this proxy comes from Robolectric
+      Class annotionClass = annotation.getClass();
+
+      //workaround for robolectric
+      //https://github.com/robolectric/robolectric/pull/1240
+      int id = 0;
+      String tag = "";
+      try {
+        Method method = annotionClass.getMethod("value");
+        id = (Integer) method.invoke(annotation);
+        method = annotionClass.getMethod("tag");
+        tag = (String) method.invoke(annotation);
+      } catch (Exception e) {
+        throw new RuntimeException("How can we get here ?");
+      }
+      boolean isUsingId = id != -1;
+
+      buffer.append(field.getName());
+      buffer.append(" = ");
+      buffer.append('(');
+      buffer.append(field.getType().getName());
+      buffer.append(')');
+
+      String root = "";
+      String findViewString = "";
+      if (isActivity) {
+        //in on create
+        root = "$1";
+        findViewString = isUsingId ? "findViewById(" + id + ")" : "getWindow().getDecorView().findViewWithTag(\"" + tag + "\")";
+      } else if (isView){
+        root = "$1";
+        findViewString = isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
+      } else {
+        root = "$1.getView()";
+        findViewString = isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
+      }
+      buffer.append(root + "." + findViewString + ";\n");
+    }
+    log.debug("Inserted :" + buffer.toString());
     return buffer.toString();
   }
 
@@ -478,8 +529,9 @@ public class  InjectViewProcessor implements IClassTransformer {
       buffer.append(injectContentView(layoutId));
     }
     if (!views.isEmpty()) {
-      buffer.append(injectViewStatements(views, clazz));
+      buffer.append(injectViewStatementsForParam(views, paramClass));
     }
+
     if (!fragments.isEmpty()) {
       if (isActivity) {
         buffer.append(injectFragmentStatements(fragments, "$1", false));
