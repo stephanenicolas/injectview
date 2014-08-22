@@ -345,6 +345,9 @@ public class  InjectViewProcessor implements IClassTransformer {
         //in on create
         root = "this";
         findViewString = isUsingId ? "findViewById(" + id + ")" : "getWindow().getDecorView().findViewWithTag(\"" + tag + "\")";
+      } else if (isView){
+        root = "this";
+        findViewString = isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
       } else {
         root = "$1";
         findViewString = isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";

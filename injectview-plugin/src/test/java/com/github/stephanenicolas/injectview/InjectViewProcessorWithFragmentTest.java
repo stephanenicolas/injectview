@@ -11,6 +11,7 @@ import android.widget.TextView;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.annotation.Config;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
@@ -22,6 +23,7 @@ import static org.junit.Assert.assertThat;
  * @author SNI
  */
 @RunWith(InjectViewTestRunner.class)
+@Config(manifest= Config.NONE)
 public class InjectViewProcessorWithFragmentTest {
   public static final String FRAGMENT_TAG = "TAG";
   public static final String FRAGMENT_TAG2 = "TAG2";

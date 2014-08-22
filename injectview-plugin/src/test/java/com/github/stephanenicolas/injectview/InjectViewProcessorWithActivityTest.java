@@ -14,6 +14,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import org.robolectric.Robolectric;
+import org.robolectric.annotation.Config;
 
 /**
  * These tests are really complex to setup.
@@ -21,6 +22,7 @@ import org.robolectric.Robolectric;
  * @author SNI
  */
 @RunWith(InjectViewTestRunner.class)
+@Config(manifest= Config.NONE)
 public class InjectViewProcessorWithActivityTest {
   public static final String VIEW_TAG = "TAG";
   public static final int VIEW_ID = 101;
