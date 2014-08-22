@@ -311,6 +311,8 @@ public class  InjectViewProcessor implements IClassTransformer {
       //TODO find where this proxy comes from. It is not there in normal builds
       // (out of robolectric tests...)
       Class annotionClass = annotation.getClass();
+      //workaround for robolectric
+      //https://github.com/robolectric/robolectric/pull/1240
       int id = 0;
       String tag = "";
       try {
@@ -318,12 +320,8 @@ public class  InjectViewProcessor implements IClassTransformer {
         id = (Integer) method.invoke(annotation);
         method = annotionClass.getMethod("tag");
         tag = (String) method.invoke(annotation);
-      } catch (IllegalAccessException e) {
-        e.printStackTrace();
-      } catch (InvocationTargetException e) {
-        e.printStackTrace();
-      } catch (NoSuchMethodException e) {
-        e.printStackTrace();
+      } catch (Exception e) {
+        throw new RuntimeException("How can we get here ?");
       }
       boolean isUsingId = id != -1;
 
@@ -333,7 +331,7 @@ public class  InjectViewProcessor implements IClassTransformer {
       buffer.append(field.getType().getName());
       buffer.append(')');
 
-      String findViewString = isUsingId ? "findViewById(" + id + ")" : "findViewByTag(" + tag + ")";
+      String findViewString = isUsingId ? "findViewById(" + id + ")" : "getWindow().getDecorView().findViewWithTag(\"" + tag + "\")";
       buffer.append(root + "." + findViewString + ";\n");
     }
     return buffer.toString();

@@ -1,5 +1,6 @@
 package com.github.stephanenicolas.injectview;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import javassist.CannotCompileException;
@@ -37,6 +38,9 @@ public class InjectViewTestRunner extends RobolectricTestRunner {
               processor.applyTransformations(dummyClass);
               byte[] bytes = dummyClass.toBytecode();
               System.out.println("Size of weaved byte code :" + bytes.length);
+              //FileOutputStream fileOutputStream = new FileOutputStream("/tmp/bytes.class");
+              //fileOutputStream.write(bytes);
+              //fileOutputStream.close();
               return bytes;
             }
           } catch (Exception e) {
