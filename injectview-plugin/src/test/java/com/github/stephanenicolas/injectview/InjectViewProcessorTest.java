@@ -3,6 +3,7 @@ package com.github.stephanenicolas.injectview;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import javassist.CannotCompileException;
@@ -34,23 +35,23 @@ public class InjectViewProcessorTest {
 
   @Test
   public void shouldInjectView_whenUsingSetContentView_withId() {
-    DummyActivityWithId activity = Robolectric.buildActivity(DummyActivityWithId.class)
+    TestActivityWithId activity = Robolectric.buildActivity(TestActivityWithId.class)
         .create()
         .get();
     assertNotNull(activity.text1);
-    assertThat(activity.text1.getId(), is(DummyActivityWithId.VIEW_ID));
+    assertThat(activity.text1.getId(), is(TestActivityWithId.VIEW_ID));
   }
 
   @Test
   public void shouldInjectView_whenUsingSetContentView_withTag() {
-    DummyActivityWithTag activity = Robolectric.buildActivity(DummyActivityWithTag.class)
+    TestActivityWithTag activity = Robolectric.buildActivity(TestActivityWithTag.class)
         .create()
         .get();
     assertNotNull(activity.text1);
-    assertThat((String)activity.text1.getTag(), is(DummyActivityWithTag.VIEW_TAG));
+    assertThat((String) activity.text1.getTag(), is(TestActivityWithTag.VIEW_TAG));
   }
 
-  public static class DummyActivityWithId extends Activity {
+  public static class TestActivityWithId extends Activity {
     public static final int VIEW_ID = 101;
     @InjectView(VIEW_ID)
     protected TextView text1;
@@ -72,7 +73,7 @@ public class InjectViewProcessorTest {
     }
   }
 
-  public static class DummyActivityWithTag extends Activity {
+  public static class TestActivityWithTag extends Activity {
     public static final String VIEW_TAG = "TAG";
     @InjectView(tag=VIEW_TAG)
     protected TextView text1;
@@ -83,11 +84,14 @@ public class InjectViewProcessorTest {
     protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
       root = new LinearLayout(this);
-      final TextView text1 = new TextView(this);
-      root.addView(text1);
-      text1.setTag(VIEW_TAG);
+      final TextView text = new TextView(this);
+      root.addView(text);
+      text.setTag(VIEW_TAG);
       setContentView(root);
-      this.text1 = (TextView)getWindow().getDecorView().findViewWithTag(VIEW_TAG);
+    }
+
+    @Override public Window getWindow() {
+      return super.getWindow();
     }
   }
 }
