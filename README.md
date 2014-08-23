@@ -1,7 +1,7 @@
 InjectView [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.stephanenicolas.injectview/injectview-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.stephanenicolas.injectview/injectview-plugin)
 ==========
 
-***Injects all views inflated from XML automatically.***
+***On Android, Injects all views inflated from XML automatically. No boiler plate at all.***
 
 <img src="https://raw.github.com/stephanenicolas/injectview/master/assets/injectview-logo.jpg"
 width="250px" />
