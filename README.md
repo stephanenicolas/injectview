@@ -3,7 +3,7 @@ InjectView [![Maven Central](https://maven-badges.herokuapp.com/maven-central/co
 
 ***Injects all views inflated from XML automatically.***
 
-<img src="https://raw.github.com/stephanenicolas/injectview/master/assets/injectview-logo.png"
+<img src="https://raw.github.com/stephanenicolas/injectview/master/assets/injectview-logo.jpg"
 width="250px" />
 
 ###Usage
