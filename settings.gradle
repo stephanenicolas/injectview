@@ -1,1 +1,2 @@
-include ':injectview-annotations', ':injectview-plugin', ':injectview-example'
+include ':injectview-annotations', ':injectview-plugin'
+include ':injectview-example'

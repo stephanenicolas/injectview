@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'nexus'
+apply plugin: 'maven'
 
 targetCompatibility = JavaVersion.VERSION_1_6
 sourceCompatibility = JavaVersion.VERSION_1_6

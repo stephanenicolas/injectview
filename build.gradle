@@ -19,12 +19,15 @@ allprojects {
   }
 
   group = GROUP
-
-  apply plugin: 'maven'
 }
 
+apply plugin: 'maven'
 apply plugin: 'release'
-createReleaseTag.dependsOn uploadArchives
+createReleaseTag.dependsOn ':injectview-annotations:uploadArchives', ':injectview-plugin:uploadArchives'
+
+release {
+  failOnSnapshotDependencies = false
+}
 
 task wrapper(type: Wrapper) {
   gradleVersion = '1.12'
