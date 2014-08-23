@@ -39,6 +39,7 @@ dependencies {
   compile 'com.google.android:android:4.4.2_r2'
 
   //--TESTS
+  testCompile 'junit:junit:4.11'
   testCompile "org.bouncycastle:bcprov-jdk15:$BOUNCYCASTLE_VERSION"
 
   testCompile("org.robolectric:robolectric:$ROBOLECTRIC_VERSION") {

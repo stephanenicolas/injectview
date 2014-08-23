@@ -209,8 +209,8 @@ public class  InjectViewProcessor implements IClassTransformer {
     }
     // create or complete onViewCreated
     List<CtConstructor> constructorList = extractExistingConstructors(clazz);
-    log.debug("constructor : " + constructorList.toString());
-    if ( !constructorList.isEmpty() ) {
+    if ( constructorList != null && !constructorList.isEmpty() ) {
+      log.debug("constructor : " + constructorList.toString());
       for (CtConstructor constructor : constructorList) {
         constructor.insertBeforeBody(createInjectedBodyWithParam(clazz, constructor.getParameterTypes()[0],views, fragments, -1));
       }
@@ -275,7 +275,7 @@ public class  InjectViewProcessor implements IClassTransformer {
             if( paramClasses[0].subclassOf(ClassPool.getDefault().get(supportFragmentClass.getName()))) {
               constructors.add(constructor);
             }
-          } catch (NotFoundException e) {
+          } catch (Exception e) {
             //nothing to do, support is not present
           }
         }
