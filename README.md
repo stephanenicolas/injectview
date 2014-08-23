@@ -36,3 +36,6 @@ Thanks to
 * [AfterBurner](https://github.com/stephanenicolas/afterburner), byte code weaving swiss army knife for Android.
 
 ###TODO
+
+* [ ] add CI and badge
+* [ ] support findbugs nullable
