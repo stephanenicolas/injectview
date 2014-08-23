@@ -269,8 +269,14 @@ public class  InjectViewProcessor implements IClassTransformer {
           if( paramClasses[0].subclassOf(ClassPool.getDefault().get(Fragment.class.getName()))) {
             constructors.add(constructor);
           }
-          if( paramClasses[0].subclassOf(ClassPool.getDefault().get(android.support.v4.app.Fragment.class.getName()))) {
-            constructors.add(constructor);
+
+          try {
+            Class<?> supportFragmentClass = Class.forName("android.support.v4.app.Fragment");
+            if( paramClasses[0].subclassOf(ClassPool.getDefault().get(supportFragmentClass.getName()))) {
+              constructors.add(constructor);
+            }
+          } catch (NotFoundException e) {
+            //nothing to do, support is not present
           }
         }
       }
@@ -561,8 +567,9 @@ public class  InjectViewProcessor implements IClassTransformer {
 
   private boolean isSupportFragment(CtClass clazz) {
     try {
-      return isSubClass(clazz, android.support.v4.app.Fragment.class);
-    } catch (NotFoundException e) {
+      Class<?> supportFragmentClass = Class.forName("android.support.v4.app.Fragment");
+      return isSubClass(clazz, supportFragmentClass);
+    } catch (Exception e) {
       //can happen
       return false;
     }
