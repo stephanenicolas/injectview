@@ -1,7 +1,10 @@
-injectview
+InjectView [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.stephanenicolas.injectview/injectview-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.stephanenicolas.injectview/injectview-plugin)
 ==========
 
 ***Injects all views inflated from XML automatically.***
+
+<img src="https://raw.github.com/stephanenicolas/injectview/master/assets/injectview-logo.png"
+width="250px" />
 
 ###Usage
 
