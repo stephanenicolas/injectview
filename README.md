@@ -39,3 +39,13 @@ Thanks to
 
 * [ ] add CI and badge
 * [ ] support findbugs nullable
+ 
+### Related projects 
+
+On the same principle of byte code weaving : 
+
+* [InjectExtra](https://github.com/stephanenicolas/injectextra)
+* [InjectResource](https://github.com/stephanenicolas/injectresource)
+* [LogLifeCycle](https://github.com/stephanenicolas/loglifecycle)
+* [Hugo](https://github.com/jakewharton/hugo)
+
