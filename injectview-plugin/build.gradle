@@ -7,9 +7,6 @@ buildscript {
   repositories {
     mavenCentral()
     jcenter()
-
-    //to get snapshots
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
   }
 
   dependencies {
@@ -22,6 +19,9 @@ repositories {
 
   //only needed to develop the lib
   mavenLocal()
+
+  //to get snapshots
+  maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
