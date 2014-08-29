@@ -35,11 +35,6 @@ Thanks to
 * [morpheus](https://github.com/stephanenicolas/morpheus), byte code weaver for android.
 * [AfterBurner](https://github.com/stephanenicolas/afterburner), byte code weaving swiss army knife for Android.
 
-###TODO
-
-* [ ] add CI and badge
-* [ ] support findbugs nullable
- 
 ### Related projects 
 
 On the same principle of byte code weaving : 
@@ -48,6 +43,11 @@ On the same principle of byte code weaving :
 * [InjectResource](https://github.com/stephanenicolas/injectresource)
 * [LogLifeCycle](https://github.com/stephanenicolas/loglifecycle)
 * [Hugo](https://github.com/jakewharton/hugo)
+
+### CI 
+
+[![Travis Build](https://travis-ci.org/stephanenicolas/injectview.svg?branch=master)](https://travis-ci.org/stephanenicolas/injectview)
+[![Coverage Status](https://img.shields.io/coveralls/stephanenicolas/injectview.svg)](https://coveralls.io/r/stephanenicolas/injectview)
 
 License
 -------
