@@ -1,11 +1,10 @@
 package com.github.stephanenicolas.injectview;
 
-import android.app.Activity;
 import android.app.Fragment;
-import android.view.View;
+import com.github.stephanenicolas.afterburner.AfterBurner;
+import com.github.stephanenicolas.afterburner.exception.AfterBurnerImpossibleException;
 import com.github.stephanenicolas.morpheus.commons.CtClassFilter;
 import com.github.stephanenicolas.morpheus.commons.JavassistUtils;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,6 +67,7 @@ import static java.lang.String.format;
 public class InjectViewProcessor implements IClassTransformer {
 
   private CtClassFilter injectViewfilter = new InjectViewCtClassFilter();
+  private AfterBurner afterBurner = new AfterBurner();
 
   @Override
   public boolean shouldTransform(CtClass candidateClass) throws JavassistBuildException {
@@ -77,8 +77,7 @@ public class InjectViewProcessor implements IClassTransformer {
       final List<CtField> fragments =
           getAllInjectedFieldsForAnnotation(candidateClass, InjectFragment.class);
       boolean hasViewsOrFragments = !(views.isEmpty() && fragments.isEmpty());
-      boolean shouldTransform = injectViewfilter.isValid(candidateClass)
-          || hasViewsOrFragments;
+      boolean shouldTransform = injectViewfilter.isValid(candidateClass) || hasViewsOrFragments;
       log.debug(
           "Class " + candidateClass.getSimpleName() + " will get transformed: " + shouldTransform);
       return shouldTransform;
@@ -158,7 +157,8 @@ public class InjectViewProcessor implements IClassTransformer {
   }
 
   private void injectStuffInFragment(final CtClass classToTransform)
-      throws NotFoundException, ClassNotFoundException, CannotCompileException {
+      throws NotFoundException, ClassNotFoundException, CannotCompileException,
+      AfterBurnerImpossibleException {
     final List<CtField> views =
         getAllInjectedFieldsForAnnotation(classToTransform, InjectView.class);
     final List<CtField> fragments =
@@ -166,21 +166,9 @@ public class InjectViewProcessor implements IClassTransformer {
     if (views.isEmpty() && fragments.isEmpty()) {
       return;
     }
-    // create or complete onViewCreated
-    CtMethod onViewCreatedMethod = extractExistingMethod(classToTransform, "onViewCreated");
-    log.debug("onViewCreatedMethod : " + onViewCreatedMethod);
-    if (onViewCreatedMethod != null) {
-      InjectorEditor injectorEditor =
-          new InjectorEditor(classToTransform, fragments, views, -1, "onViewCreated");
-      onViewCreatedMethod.instrument(injectorEditor);
-      if (!injectorEditor.isSuccessful) {
-        throw new CannotCompileException("Transformation failed.");
-      }
-    } else {
-      classToTransform.addMethod(
-          CtNewMethod.make(createOnViewCreatedMethod(classToTransform, views, fragments),
-              classToTransform));
-    }
+    afterBurner.afterOverrideMethod(classToTransform, "onViewCreated",
+        createInjectedBody(classToTransform, views, fragments, -1));
+
     // create or complete onDestroyView
     CtMethod onDestroyViewMethod = extractExistingMethod(classToTransform, "onDestroyView");
     log.debug("onDestroyView : " + onDestroyViewMethod);
@@ -225,15 +213,16 @@ public class InjectViewProcessor implements IClassTransformer {
   }
 
   private void injectStuffInClass(final CtClass clazz)
-      throws NotFoundException, ClassNotFoundException, CannotCompileException {
+      throws NotFoundException, ClassNotFoundException, CannotCompileException,
+      AfterBurnerImpossibleException {
     final List<CtField> views = getAllInjectedFieldsForAnnotation(clazz, InjectView.class);
     final List<CtField> fragments = getAllInjectedFieldsForAnnotation(clazz, InjectFragment.class);
     if (views.isEmpty() && fragments.isEmpty()) {
       return;
     }
     // create or complete onViewCreated
-    List<CtConstructor> constructorList = JavassistUtils.extractValidConstructors(clazz,
-        injectViewfilter);
+    List<CtConstructor> constructorList =
+        JavassistUtils.extractValidConstructors(clazz, injectViewfilter);
     if (constructorList != null && !constructorList.isEmpty()) {
       log.debug("constructor : " + constructorList.toString());
       for (CtConstructor constructor : constructorList) {
