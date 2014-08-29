@@ -169,45 +169,24 @@ public class InjectViewProcessor implements IClassTransformer {
     afterBurner.afterOverrideMethod(classToTransform, "onViewCreated",
         createInjectedBody(classToTransform, views, fragments, -1));
 
-    // create or complete onDestroyView
-    CtMethod onDestroyViewMethod = extractExistingMethod(classToTransform, "onDestroyView");
-    log.debug("onDestroyView : " + onDestroyViewMethod);
-    if (onDestroyViewMethod != null) {
-      InjectorEditor injectorEditor =
-          new InjectorEditor(classToTransform, fragments, views, -1, "onDestroyView");
-      onDestroyViewMethod.instrument(injectorEditor);
-      if (!injectorEditor.isSuccessful) {
-        throw new CannotCompileException("Transformation failed.");
-      }
-    } else {
-      classToTransform.addMethod(
-          CtNewMethod.make(createOnDestroyViewMethod(classToTransform, views), classToTransform));
-    }
+    afterBurner.afterOverrideMethod(classToTransform, "onDestroyView",
+        destroyViewStatements(views));
+
     classToTransform.detach();
     injectStuffInFragment(classToTransform.getSuperclass());
   }
 
   private void injectStuffInView(final CtClass classToTransform)
-      throws NotFoundException, ClassNotFoundException, CannotCompileException {
+      throws NotFoundException, ClassNotFoundException, CannotCompileException,
+      AfterBurnerImpossibleException {
     final List<CtField> views =
         getAllInjectedFieldsForAnnotation(classToTransform, InjectView.class);
     if (views.isEmpty()) {
       return;
     }
-    CtMethod onFinishInflate = extractExistingMethod(classToTransform, "onFinishInflate");
-    log.debug("onFinishInflateMethod : " + onFinishInflate);
-    if (onFinishInflate != null) {
-      InjectorEditor injectorEditor =
-          new InjectorEditor(classToTransform, new ArrayList<CtField>(), views, -1,
-              "onFinishInflate");
-      onFinishInflate.instrument(injectorEditor);
-      if (!injectorEditor.isSuccessful) {
-        throw new CannotCompileException("Transformation failed.");
-      }
-    } else {
-      classToTransform.addMethod(
-          CtNewMethod.make(createOnFinishInflateMethod(classToTransform, views), classToTransform));
-    }
+
+    afterBurner.afterOverrideMethod(classToTransform, "onFinishInflate",
+        createInjectedBody(classToTransform, views, new ArrayList<CtField>(), -1));
     classToTransform.detach();
     injectStuffInView(classToTransform.getSuperclass());
   }
@@ -240,9 +219,9 @@ public class InjectViewProcessor implements IClassTransformer {
   }
 
   private boolean checkIfMethodIsInvoked(final CtClass clazz, CtMethod withinMethod,
-      String invokedMEthod) throws CannotCompileException {
+      String invokedMethod) throws CannotCompileException {
     DetectMethodCallEditor dectectSetContentViewEditor =
-        new DetectMethodCallEditor(clazz, invokedMEthod);
+        new DetectMethodCallEditor(clazz, invokedMethod);
     withinMethod.instrument(dectectSetContentViewEditor);
     boolean isCallingSetContentView = dectectSetContentViewEditor.isCallingMethod();
     return isCallingSetContentView;
@@ -254,21 +233,6 @@ public class InjectViewProcessor implements IClassTransformer {
         + "super.onCreate(savedInstanceState);\n"
         + createInjectedBody(clazz, views, fragments, layoutId)
         + "}";
-  }
-
-  private String createOnViewCreatedMethod(CtClass clazz, List<CtField> views,
-      List<CtField> fragments) throws ClassNotFoundException, NotFoundException {
-    return
-        "public void onViewCreated(android.view.View view, android.os.Bundle savedInstanceState) { \n"
-            + "super.onViewCreated(view, savedInstanceState);\n"
-            + createInjectedBody(clazz, views, fragments, -1)
-            + "}";
-  }
-
-  private String createOnFinishInflateMethod(CtClass clazz, List<CtField> views)
-      throws ClassNotFoundException, NotFoundException {
-    return "public void onFinishInflate() { \n" + "super.onFinishInflate();\n" + createInjectedBody(
-        clazz, views) + "}";
   }
 
   private String createOnDestroyViewMethod(CtClass clazz, List<CtField> views) {
@@ -349,8 +313,6 @@ public class InjectViewProcessor implements IClassTransformer {
   private String injectViewStatements(List<CtField> viewsToInject, CtClass targetClazz)
       throws ClassNotFoundException, NotFoundException {
     boolean isActivity = isActivity(targetClazz);
-    boolean isFragment = isFragment(targetClazz);
-    boolean isSupportFragment = isSupportFragment(targetClazz);
     boolean isView = isView(targetClazz);
 
     StringBuffer buffer = new StringBuffer();
@@ -486,9 +448,7 @@ public class InjectViewProcessor implements IClassTransformer {
       buffer.append(injectContentView(layoutId));
     }
     if (!views.isEmpty()) {
-      if (isActivity || isView) {
-        buffer.append(injectViewStatements(views, clazz));
-      } else if (isFragment || isSupportFragment) {
+      if (isActivity || isView || isFragment || isSupportFragment) {
         buffer.append(injectViewStatements(views, clazz));
       }
     }
