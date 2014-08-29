@@ -71,22 +71,13 @@ public class InjectViewProcessor implements IClassTransformer {
   @Override
   public boolean shouldTransform(CtClass candidateClass) throws JavassistBuildException {
     try {
-      boolean isActivity = isActivity(candidateClass);
-      boolean isFragment = isFragment(candidateClass);
-      boolean isSupportFragment = isSupportFragment(candidateClass);
-      boolean isView = isView(candidateClass);
-
-      boolean hasAfterBurner = checkIfAfterBurnerAlreadyActive(candidateClass);
       final List<CtField> views =
           getAllInjectedFieldsForAnnotation(candidateClass, InjectView.class);
       final List<CtField> fragments =
           getAllInjectedFieldsForAnnotation(candidateClass, InjectFragment.class);
       boolean hasViewsOrFragments = !(views.isEmpty() && fragments.isEmpty());
-      boolean shouldTransform = !hasAfterBurner && (isActivity
-          || isFragment
-          || isSupportFragment
-          || isView
-          || hasViewsOrFragments);
+      boolean shouldTransform = injectViewfilter.isValid(candidateClass)
+          || hasViewsOrFragments;
       log.debug(
           "Class " + candidateClass.getSimpleName() + " will get transformed: " + shouldTransform);
       return shouldTransform;
@@ -103,17 +94,13 @@ public class InjectViewProcessor implements IClassTransformer {
     log.debug("Analyzing " + classToTransform.getSimpleName());
 
     try {
-      boolean isActivity = isActivity(classToTransform);
-      boolean isFragment = isFragment(classToTransform);
-      boolean isSupportFragment = isSupportFragment(classToTransform);
-      boolean isView = isView(classToTransform);
-      if (isActivity) {
+      if (isActivity(classToTransform)) {
         log.debug("Activity detected " + classToTransform.getSimpleName());
         injectStuffInActivity(classToTransform);
-      } else if (isFragment || isSupportFragment) {
+      } else if (isFragment(classToTransform) || isSupportFragment(classToTransform)) {
         log.debug("Fragment detected " + classToTransform.getSimpleName());
         injectStuffInFragment(classToTransform);
-      } else if (isView) {
+      } else if (isView(classToTransform)) {
         log.debug("View detected " + classToTransform.getSimpleName());
         injectStuffInView(classToTransform);
       } else {
@@ -244,7 +231,8 @@ public class InjectViewProcessor implements IClassTransformer {
       return;
     }
     // create or complete onViewCreated
-    List<CtConstructor> constructorList = JavassistUtils.extractValidConstructors(clazz, injectViewfilter);
+    List<CtConstructor> constructorList = JavassistUtils.extractValidConstructors(clazz,
+        injectViewfilter);
     if (constructorList != null && !constructorList.isEmpty()) {
       log.debug("constructor : " + constructorList.toString());
       for (CtConstructor constructor : constructorList) {
@@ -315,21 +303,6 @@ public class InjectViewProcessor implements IClassTransformer {
     } catch (Exception e) {
       return -1;
     }
-  }
-
-  private boolean checkIfAfterBurnerAlreadyActive(final CtClass classToTransform) {
-    try {
-      classToTransform.getDeclaredField("afterBurnerActive");
-      return true;
-    } catch (Exception e) {
-      return false;
-    }
-  }
-
-  private void markAfterBurnerActiveInClass(final CtClass classToTransform)
-      throws CannotCompileException {
-    classToTransform.addField(
-        new CtField(CtClass.booleanType, "afterBurnerActive", classToTransform));
   }
 
   private String injectContentView(int layoutId) {
@@ -623,8 +596,6 @@ public class InjectViewProcessor implements IClassTransformer {
           log.debug("Injected : " + string);
 
           m.replace(string);
-          // mark class to avoid duplicate
-          markAfterBurnerActiveInClass(classToTransform);
           log.info("Class {} has been enhanced.", classToTransform.getName());
         }
       } catch (Throwable e) {
