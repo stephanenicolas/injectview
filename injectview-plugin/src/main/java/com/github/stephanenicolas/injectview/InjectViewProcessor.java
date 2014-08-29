@@ -22,6 +22,7 @@ import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.findValidParamIndex;
 import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.getAllInjectedFieldsForAnnotation;
 import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isActivity;
 import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isFragment;
@@ -205,8 +206,10 @@ public class InjectViewProcessor implements IClassTransformer {
     if (constructorList != null && !constructorList.isEmpty()) {
       log.debug("constructor : " + constructorList.toString());
       for (CtConstructor constructor : constructorList) {
+        int indexValidParam = findValidParamIndex(constructor.getParameterTypes(), injectViewfilter);
+        //indexValidParam is > 0 at this stage
         constructor.insertBeforeBody(
-            createInjectedBodyWithParam(clazz, constructor.getParameterTypes()[0], views, fragments,
+            createInjectedBodyWithParam(clazz, constructor.getParameterTypes(), indexValidParam, views, fragments,
                 -1));
       }
     } else {
@@ -364,8 +367,9 @@ public class InjectViewProcessor implements IClassTransformer {
     return buffer.toString();
   }
 
-  private String injectViewStatementsForParam(List<CtField> viewsToInject, CtClass targetClazz)
+  private String injectViewStatementsForParam(List<CtField> viewsToInject, CtClass[] paramClasses, int indexParam)
       throws ClassNotFoundException, NotFoundException {
+    CtClass targetClazz = paramClasses[indexParam];
     boolean isActivity = isActivity(targetClazz);
     boolean isView = isView(targetClazz);
 
@@ -400,15 +404,15 @@ public class InjectViewProcessor implements IClassTransformer {
       String findViewString = "";
       if (isActivity) {
         //in on create
-        root = "$1";
+        root = "$" + (1+indexParam);
         findViewString = isUsingId ? "findViewById(" + id + ")"
             : "getWindow().getDecorView().findViewWithTag(\"" + tag + "\")";
       } else if (isView) {
-        root = "$1";
+        root = "$" + (1+indexParam);
         findViewString =
             isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
       } else {
-        root = "$1.getView()";
+        root = "$" + (1+indexParam) + ".getView()";
         findViewString =
             isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
       }
@@ -425,11 +429,6 @@ public class InjectViewProcessor implements IClassTransformer {
       buffer.append(" = null;\n");
     }
     return buffer.toString();
-  }
-
-  private String createInjectedBody(CtClass clazz, List<CtField> views)
-      throws ClassNotFoundException, NotFoundException {
-    return createInjectedBody(clazz, views, new ArrayList<CtField>(), -1);
   }
 
   private String createInjectedBody(CtClass clazz, List<CtField> views, List<CtField> fragments,
@@ -466,8 +465,9 @@ public class InjectViewProcessor implements IClassTransformer {
     return buffer.toString();
   }
 
-  private String createInjectedBodyWithParam(CtClass clazz, CtClass paramClass, List<CtField> views,
+  private String createInjectedBodyWithParam(CtClass clazz, CtClass[] paramClasses, int paramIndex, List<CtField> views,
       List<CtField> fragments, int layoutId) throws ClassNotFoundException, NotFoundException {
+    CtClass paramClass = paramClasses[paramIndex];
     boolean isActivity = isActivity(paramClass);
     boolean isFragment = isFragment(paramClass);
     boolean isSupportFragment = isSupportFragment(paramClass);
@@ -480,14 +480,14 @@ public class InjectViewProcessor implements IClassTransformer {
       buffer.append(injectContentView(layoutId));
     }
     if (!views.isEmpty()) {
-      buffer.append(injectViewStatementsForParam(views, paramClass));
+      buffer.append(injectViewStatementsForParam(views, paramClasses, paramIndex));
     }
 
     if (!fragments.isEmpty()) {
       if (isActivity) {
-        buffer.append(injectFragmentStatements(fragments, "$1", false));
+        buffer.append(injectFragmentStatements(fragments, "$" + (1+paramIndex), false));
       } else if (isFragment || isSupportFragment) {
-        buffer.append(injectFragmentStatements(fragments, "$1", true));
+        buffer.append(injectFragmentStatements(fragments, "$" + (1+paramIndex), true));
       }
     }
     String string = buffer.toString();
