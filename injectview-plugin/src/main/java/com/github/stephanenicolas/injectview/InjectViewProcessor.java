@@ -23,6 +23,7 @@ import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.getAllInjectedFieldsForAnnotation;
 import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isActivity;
 import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isFragment;
 import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isSupportFragment;
@@ -473,22 +474,6 @@ public class InjectViewProcessor implements IClassTransformer {
       buffer.append(" = null;\n");
     }
     return buffer.toString();
-  }
-
-  private List<CtField> getAllInjectedFieldsForAnnotation(CtClass clazz,
-      Class<? extends Annotation> annotationClazz) {
-    List<CtField> result = new ArrayList<CtField>();
-    CtField[] allFields = clazz.getDeclaredFields();
-    log.debug("Scanning fields in " + clazz.getName());
-    for (CtField field : allFields) {
-      log.debug("Discovered field " + field.getName());
-      if (field.hasAnnotation(annotationClazz)) {
-        log.debug(
-            "Field " + field.getName() + " has annotation " + annotationClazz.getSimpleName());
-        result.add(field);
-      }
-    }
-    return result;
   }
 
   private String createInjectedBody(CtClass clazz, List<CtField> views)
