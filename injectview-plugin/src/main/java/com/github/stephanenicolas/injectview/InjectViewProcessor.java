@@ -3,6 +3,8 @@ package com.github.stephanenicolas.injectview;
 import android.app.Activity;
 import android.app.Fragment;
 import android.view.View;
+import com.github.stephanenicolas.morpheus.commons.CtClassFilter;
+import com.github.stephanenicolas.morpheus.commons.JavassistUtils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -64,6 +66,8 @@ import static java.lang.String.format;
 @Slf4j
 public class InjectViewProcessor implements IClassTransformer {
 
+  private CtClassFilter injectViewfilter = new InjectViewCtClassFilter();
+
   @Override
   public boolean shouldTransform(CtClass candidateClass) throws JavassistBuildException {
     try {
@@ -73,7 +77,8 @@ public class InjectViewProcessor implements IClassTransformer {
       boolean isView = isView(candidateClass);
 
       boolean hasAfterBurner = checkIfAfterBurnerAlreadyActive(candidateClass);
-      final List<CtField> views = getAllInjectedFieldsForAnnotation(candidateClass, InjectView.class);
+      final List<CtField> views =
+          getAllInjectedFieldsForAnnotation(candidateClass, InjectView.class);
       final List<CtField> fragments =
           getAllInjectedFieldsForAnnotation(candidateClass, InjectFragment.class);
       boolean hasViewsOrFragments = !(views.isEmpty() && fragments.isEmpty());
@@ -239,7 +244,7 @@ public class InjectViewProcessor implements IClassTransformer {
       return;
     }
     // create or complete onViewCreated
-    List<CtConstructor> constructorList = extractExistingConstructors(clazz);
+    List<CtConstructor> constructorList = JavassistUtils.extractValidConstructors(clazz, injectViewfilter);
     if (constructorList != null && !constructorList.isEmpty()) {
       log.debug("constructor : " + constructorList.toString());
       for (CtConstructor constructor : constructorList) {
@@ -296,40 +301,6 @@ public class InjectViewProcessor implements IClassTransformer {
   private CtMethod extractExistingMethod(final CtClass classToTransform, String methodName) {
     try {
       return classToTransform.getDeclaredMethod(methodName);
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
-  private List<CtConstructor> extractExistingConstructors(final CtClass classToTransform) {
-    try {
-      List<CtConstructor> constructors = new ArrayList<CtConstructor>();
-      CtConstructor[] declaredConstructors = classToTransform.getDeclaredConstructors();
-      for (CtConstructor constructor : declaredConstructors) {
-        CtClass[] paramClasses = constructor.getParameterTypes();
-        if (paramClasses.length == 1) {
-          if (paramClasses[0].subclassOf(ClassPool.getDefault().get(View.class.getName()))) {
-            constructors.add(constructor);
-          }
-          if (paramClasses[0].subclassOf(ClassPool.getDefault().get(Activity.class.getName()))) {
-            constructors.add(constructor);
-          }
-          if (paramClasses[0].subclassOf(ClassPool.getDefault().get(Fragment.class.getName()))) {
-            constructors.add(constructor);
-          }
-
-          try {
-            Class<?> supportFragmentClass = Class.forName("android.support.v4.app.Fragment");
-            if (paramClasses[0].subclassOf(
-                ClassPool.getDefault().get(supportFragmentClass.getName()))) {
-              constructors.add(constructor);
-            }
-          } catch (Exception e) {
-            //nothing to do, support is not present
-          }
-        }
-      }
-      return constructors;
     } catch (Exception e) {
       return null;
     }
@@ -614,6 +585,12 @@ public class InjectViewProcessor implements IClassTransformer {
     }
     String string = buffer.toString();
     return string;
+  }
+
+  private static class InjectViewCtClassFilter implements CtClassFilter {
+    @Override public boolean isValid(CtClass clazz) throws NotFoundException {
+      return isActivity(clazz) || isView(clazz) || isFragment(clazz) || isSupportFragment(clazz);
+    }
   }
 
   private final class InjectorEditor extends ExprEditor {
