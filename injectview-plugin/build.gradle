@@ -24,6 +24,11 @@ repositories {
   //only needed to develop the lib
   mavenLocal()
 
+  //for robolectric fork and support
+  maven {
+    url 'maven_3rd_party'
+  }
+
   //to get snapshots
   maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
