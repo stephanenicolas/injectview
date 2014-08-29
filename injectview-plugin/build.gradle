@@ -49,11 +49,11 @@ dependencies {
   compile project(':injectview-annotations')
 
 
-  compile 'org.projectlombok:lombok:1.14.2'
-  compile 'com.google.android:android:4.1.1.4'
+  compile "org.projectlombok:lombok:1.14.2"
+  compile "com.google.android:android:${ANDROID_VERSION}"
 
   //--TESTS
-  testCompile 'junit:junit:4.11'
+  testCompile "junit:junit:$JUNIT_VERSION"
   testCompile "org.bouncycastle:bcprov-jdk15:$BOUNCYCASTLE_VERSION"
 
   testCompile("org.robolectric:robolectric:$ROBOLECTRIC_VERSION") {
@@ -80,7 +80,7 @@ dependencies {
   }
   testCompile("org.apache.httpcomponents:httpclient:$HTTP_CLIENT_VERSION")
   testCompile("commons-logging:commons-logging:$COMMONS_LOGGING_VERSION")
-  testCompile("com.google.android:android-test:$ANDROID_TEST_VERSION")
+  testCompile("com.google.android:android-test:$ANDROID_VERSION")
   testCompile "org.easymock:easymock:$EASY_MOCK_VERSION"
 }
 
