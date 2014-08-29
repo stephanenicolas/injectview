@@ -1,8 +1,3 @@
-apply plugin: 'groovy'
-apply plugin: 'java'
-apply plugin: 'nexus'
-apply plugin: 'maven'
-
 buildscript {
   repositories {
     mavenCentral()
@@ -13,6 +8,13 @@ buildscript {
     classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.7'
   }
 }
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'nexus'
+apply plugin: 'maven'
+apply plugin: 'cobertura'
+apply plugin: 'com.github.kt3k.coveralls'
 
 repositories {
   mavenCentral()
@@ -111,3 +113,9 @@ tasks.withType(Test) {
   include "**/*Test.class" // whatever Ant pattern matches your test class files
 }
 
+check.dependsOn test
+install.dependsOn check
+
+cobertura.coverageFormats = ['html', 'xml'] // coveralls plugin depends on xml format report
+cobertura.auxiliaryClasspath += project.files('../injectview-annotations/build/classes/')
+cobertura.coverageIncludes = ['.*com.github.stephanenicolas.injectview.InjectViewProcessor']
