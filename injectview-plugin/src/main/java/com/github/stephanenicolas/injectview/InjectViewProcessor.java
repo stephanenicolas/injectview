@@ -2,6 +2,7 @@ package com.github.stephanenicolas.injectview;
 
 import android.app.Fragment;
 import com.github.stephanenicolas.afterburner.AfterBurner;
+import com.github.stephanenicolas.afterburner.InsertableMethodBuilder;
 import com.github.stephanenicolas.afterburner.exception.AfterBurnerImpossibleException;
 import com.github.stephanenicolas.morpheus.commons.CtClassFilter;
 import com.github.stephanenicolas.morpheus.commons.JavassistUtils;
@@ -117,7 +118,8 @@ public class InjectViewProcessor implements IClassTransformer {
   }
 
   private void injectStuffInActivity(final CtClass classToTransform)
-      throws NotFoundException, ClassNotFoundException, CannotCompileException {
+      throws NotFoundException, ClassNotFoundException, CannotCompileException,
+      AfterBurnerImpossibleException {
     int layoutId = getLayoutId(classToTransform);
     final List<CtField> views =
         getAllInjectedFieldsForAnnotation(classToTransform, InjectView.class);
@@ -140,12 +142,13 @@ public class InjectViewProcessor implements IClassTransformer {
         layoutId = -1;
         insertionMethod = "setContentView";
       }
-      InjectorEditor injectorEditor =
-          new InjectorEditor(classToTransform, fragments, views, layoutId, insertionMethod);
-      onCreateMethod.instrument(injectorEditor);
-      if (!injectorEditor.isSuccessful) {
-        throw new CannotCompileException("Transformation failed.");
-      }
+      InsertableMethodBuilder builder = new InsertableMethodBuilder(afterBurner);
+
+      builder.insertIntoClass(classToTransform).inMethodIfExists("onCreate")
+        .afterACallTo(insertionMethod)
+      .withBody(createInjectedBody(classToTransform, views, fragments, layoutId))
+      .elseCreateMethodIfNotExists("") //not used, we are sure the method exists
+      .doIt();
     } else {
       log.debug("Does not have onCreate method yet");
       String onCreateMethodFull =
@@ -197,20 +200,19 @@ public class InjectViewProcessor implements IClassTransformer {
       AfterBurnerImpossibleException {
     final List<CtField> views = getAllInjectedFieldsForAnnotation(clazz, InjectView.class);
     final List<CtField> fragments = getAllInjectedFieldsForAnnotation(clazz, InjectFragment.class);
-    if (views.isEmpty() && fragments.isEmpty()) {
-      return;
-    }
+
     // create or complete onViewCreated
     List<CtConstructor> constructorList =
         JavassistUtils.extractValidConstructors(clazz, injectViewfilter);
     if (constructorList != null && !constructorList.isEmpty()) {
       log.debug("constructor : " + constructorList.toString());
       for (CtConstructor constructor : constructorList) {
-        int indexValidParam = findValidParamIndex(constructor.getParameterTypes(), injectViewfilter);
+        int indexValidParam =
+            findValidParamIndex(constructor.getParameterTypes(), injectViewfilter);
         //indexValidParam is > 0 at this stage
         constructor.insertBeforeBody(
-            createInjectedBodyWithParam(clazz, constructor.getParameterTypes(), indexValidParam, views, fragments,
-                -1));
+            createInjectedBodyWithParam(clazz, constructor.getParameterTypes(), indexValidParam,
+                views, fragments, -1));
       }
     } else {
       log.warn(
@@ -236,11 +238,6 @@ public class InjectViewProcessor implements IClassTransformer {
         + "super.onCreate(savedInstanceState);\n"
         + createInjectedBody(clazz, views, fragments, layoutId)
         + "}";
-  }
-
-  private String createOnDestroyViewMethod(CtClass clazz, List<CtField> views) {
-    return "public void onDestroyView() { \n" + "super.onDestroyView();\n" + destroyViewStatements(
-        views) + "}";
   }
 
   private CtMethod extractExistingMethod(final CtClass classToTransform, String methodName) {
@@ -367,8 +364,8 @@ public class InjectViewProcessor implements IClassTransformer {
     return buffer.toString();
   }
 
-  private String injectViewStatementsForParam(List<CtField> viewsToInject, CtClass[] paramClasses, int indexParam)
-      throws ClassNotFoundException, NotFoundException {
+  private String injectViewStatementsForParam(List<CtField> viewsToInject, CtClass[] paramClasses,
+      int indexParam) throws ClassNotFoundException, NotFoundException {
     CtClass targetClazz = paramClasses[indexParam];
     boolean isActivity = isActivity(targetClazz);
     boolean isView = isView(targetClazz);
@@ -404,15 +401,15 @@ public class InjectViewProcessor implements IClassTransformer {
       String findViewString = "";
       if (isActivity) {
         //in on create
-        root = "$" + (1+indexParam);
+        root = "$" + (1 + indexParam);
         findViewString = isUsingId ? "findViewById(" + id + ")"
             : "getWindow().getDecorView().findViewWithTag(\"" + tag + "\")";
       } else if (isView) {
-        root = "$" + (1+indexParam);
+        root = "$" + (1 + indexParam);
         findViewString =
             isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
       } else {
-        root = "$" + (1+indexParam) + ".getView()";
+        root = "$" + (1 + indexParam) + ".getView()";
         findViewString =
             isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
       }
@@ -447,9 +444,7 @@ public class InjectViewProcessor implements IClassTransformer {
       buffer.append(injectContentView(layoutId));
     }
     if (!views.isEmpty()) {
-      if (isActivity || isView || isFragment || isSupportFragment) {
-        buffer.append(injectViewStatements(views, clazz));
-      }
+      buffer.append(injectViewStatements(views, clazz));
     }
 
     if (!fragments.isEmpty()) {
@@ -465,8 +460,9 @@ public class InjectViewProcessor implements IClassTransformer {
     return buffer.toString();
   }
 
-  private String createInjectedBodyWithParam(CtClass clazz, CtClass[] paramClasses, int paramIndex, List<CtField> views,
-      List<CtField> fragments, int layoutId) throws ClassNotFoundException, NotFoundException {
+  private String createInjectedBodyWithParam(CtClass clazz, CtClass[] paramClasses, int paramIndex,
+      List<CtField> views, List<CtField> fragments, int layoutId)
+      throws ClassNotFoundException, NotFoundException {
     CtClass paramClass = paramClasses[paramIndex];
     boolean isActivity = isActivity(paramClass);
     boolean isFragment = isFragment(paramClass);
@@ -485,9 +481,9 @@ public class InjectViewProcessor implements IClassTransformer {
 
     if (!fragments.isEmpty()) {
       if (isActivity) {
-        buffer.append(injectFragmentStatements(fragments, "$" + (1+paramIndex), false));
+        buffer.append(injectFragmentStatements(fragments, "$" + (1 + paramIndex), false));
       } else if (isFragment || isSupportFragment) {
-        buffer.append(injectFragmentStatements(fragments, "$" + (1+paramIndex), true));
+        buffer.append(injectFragmentStatements(fragments, "$" + (1 + paramIndex), true));
       }
     }
     String string = buffer.toString();
@@ -497,46 +493,6 @@ public class InjectViewProcessor implements IClassTransformer {
   private static class InjectViewCtClassFilter implements CtClassFilter {
     @Override public boolean isValid(CtClass clazz) throws NotFoundException {
       return isActivity(clazz) || isView(clazz) || isFragment(clazz) || isSupportFragment(clazz);
-    }
-  }
-
-  private final class InjectorEditor extends ExprEditor {
-    private final CtClass classToTransform;
-    private final List<CtField> fragments;
-    private final List<CtField> views;
-    private final int layoutId;
-    private String insertionMethod;
-    private boolean isSuccessful = true;
-
-    private InjectorEditor(CtClass classToTransform, List<CtField> fragments, List<CtField> views,
-        int layoutId, String insertionMethod) {
-      this.classToTransform = classToTransform;
-      this.fragments = fragments;
-      this.views = views;
-      this.layoutId = layoutId;
-      this.insertionMethod = insertionMethod;
-    }
-
-    @Override
-    public void edit(MethodCall m) throws CannotCompileException {
-      try {
-        log.debug("method call " + m.getMethodName());
-        if (m.getMethodName().equals(insertionMethod)) {
-          log.debug("insertion method " + m.getMethodName());
-
-          String string =
-              "$_ = $proceed($$);\n" + createInjectedBody(m.getEnclosingClass(), views, fragments,
-                  layoutId);
-          log.debug("Injected : " + string);
-
-          m.replace(string);
-          log.info("Class {} has been enhanced.", classToTransform.getName());
-        }
-      } catch (Throwable e) {
-        isSuccessful = false;
-        log.error("A problem occured during transformation", e);
-        throw new CannotCompileException("A problem occured during transformation", e);
-      }
     }
   }
 
