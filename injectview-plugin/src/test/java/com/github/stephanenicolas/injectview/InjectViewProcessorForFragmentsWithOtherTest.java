@@ -4,9 +4,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import org.junit.Test;
@@ -25,7 +23,7 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(InjectViewTestRunner.class)
 @Config(manifest= Config.NONE)
-public class InjectViewProcessorForViewsWithOtherTest {
+public class InjectViewProcessorForFragmentsWithOtherTest {
   public static final String VIEW_TAG = "TAG";
   public static final String VIEW_TAG2 = "TAG2";
   public static final int VIEW_ID = 101;
@@ -34,21 +32,20 @@ public class InjectViewProcessorForViewsWithOtherTest {
   private InjectViewProcessor processor = new InjectViewProcessor();
 
   @Test
-  public void shouldInjectView_withId() {
+  public void shouldInjectFragment_withId() {
     TestActivityWithId activity = Robolectric.buildActivity(TestActivityWithId.class)
         .create()
         .get();
-    assertNotNull(activity.pojoWithViewContructor.text1);
-    assertThat(activity.pojoWithViewContructor.text1.getId(), is(VIEW_ID));
-    assertNotNull(activity.pojoWithActivityConstructor.text1);
-    assertThat(activity.pojoWithActivityConstructor.text1.getId(), is(VIEW_ID));
-    assertNotNull(activity.pojoWithFragmentConstructor.text1);
-    assertThat(activity.pojoWithFragmentConstructor.text1.getId(), is(VIEW_ID));
+    assertNotNull(activity.pojoWithActivityConstructor.fragment);
+    assertThat(activity.pojoWithActivityConstructor.fragment.getId(), is(VIEW_ID2));
+    assertThat(activity.pojoWithActivityConstructor.fragment2.getTag(), is(VIEW_TAG2));
+    assertNotNull(activity.pojoWithFragmentConstructor.fragment);
+    assertThat(activity.pojoWithFragmentConstructor.fragment.getId(), is(VIEW_ID2));
+    assertThat(activity.pojoWithActivityConstructor.fragment2.getTag(), is(VIEW_TAG2));
   }
 
 
   public static class TestActivityWithId extends Activity {
-    private PojoWithViewConstructor pojoWithViewContructor;
     private PojoWithActivityConstructor pojoWithActivityConstructor;
     private PojoWithFragmentConstructor pojoWithFragmentConstructor;
 
@@ -63,7 +60,6 @@ public class InjectViewProcessorForViewsWithOtherTest {
       layout2.setId(VIEW_ID2);
       layout.addView(layout2);
 
-      pojoWithViewContructor = new PojoWithViewConstructor(layout);
       pojoWithActivityConstructor = new PojoWithActivityConstructor(this);
       setContentView(layout);
       pojoWithFragmentConstructor = new PojoWithFragmentConstructor(getFragmentManager().findFragmentByTag(
@@ -95,30 +91,23 @@ public class InjectViewProcessorForViewsWithOtherTest {
     }
   }
 
-  public static class PojoWithViewConstructor {
-    @InjectView(VIEW_ID)
-    protected TextView text1;
-
-    public PojoWithViewConstructor(View view) {
-      text1.setText("");
-    }
-  }
-
   public static class PojoWithActivityConstructor {
-    @InjectView(VIEW_ID)
-    protected TextView text1;
+    @InjectFragment(VIEW_ID2)
+    protected Fragment fragment;
+    @InjectFragment(tag = VIEW_TAG2)
+    protected Fragment fragment2;
 
     public PojoWithActivityConstructor(Activity activity) {
-      text1.setText("");
     }
   }
 
   public static class PojoWithFragmentConstructor {
-    @InjectView(VIEW_ID)
-    protected TextView text1;
+    @InjectFragment(VIEW_ID2)
+    protected Fragment fragment;
+    @InjectFragment(tag = VIEW_TAG2)
+    protected Fragment fragment2;
 
     public PojoWithFragmentConstructor(Fragment fragment) {
-      text1.setText("");
     }
   }
 

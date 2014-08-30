@@ -42,6 +42,7 @@ import static java.lang.String.format;
  *     <ul>
  *       <li>right after onViewCreated
  *       <li>views are destroyed right after onViewDestroyed
+ *       <li>fragments must return a non null view for onViewCreated to be used by Android..
  *     </ul>
  *   <li>for views :
  *     <ul>
