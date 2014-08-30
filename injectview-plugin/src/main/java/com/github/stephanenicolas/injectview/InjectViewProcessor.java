@@ -133,7 +133,7 @@ public class InjectViewProcessor implements IClassTransformer {
     if (onCreateMethod != null) {
       log.debug("Has onCreate method already");
       boolean isCallingSetContentView =
-          checkIfMethodIsInvoked(onCreateMethod, "setContentView");
+          afterBurner.checkIfMethodIsInvoked(onCreateMethod, "setContentView");
 
       log.debug("onCreate invokes setContentView: " + isCallingSetContentView);
 
@@ -221,11 +221,6 @@ public class InjectViewProcessor implements IClassTransformer {
     }
     clazz.detach();
     injectStuffInFragment(clazz.getSuperclass());
-  }
-
-  private boolean checkIfMethodIsInvoked(CtMethod withinMethod,
-      String invokedMethod) throws CannotCompileException {
-    return new DetectMethodCallEditor(withinMethod, invokedMethod).checkIfisCallingMethod();
   }
 
   private String createOnCreateMethod(CtClass clazz, List<CtField> views, List<CtField> fragments,
@@ -489,30 +484,6 @@ public class InjectViewProcessor implements IClassTransformer {
   private static class InjectViewCtClassFilter implements CtClassFilter {
     @Override public boolean isValid(CtClass clazz) throws NotFoundException {
       return isActivity(clazz) || isView(clazz) || isFragment(clazz) || isSupportFragment(clazz);
-    }
-  }
-
-  private final class DetectMethodCallEditor extends ExprEditor {
-
-    private CtMethod withinMethod;
-    private String methodName;
-    private boolean isCallingMethod;
-
-    private DetectMethodCallEditor(CtMethod withinMethod, String methodName) {
-      this.withinMethod = withinMethod;
-      this.methodName = methodName;
-    }
-
-    @Override
-    public void edit(MethodCall m) throws CannotCompileException {
-      if (m.getMethodName().equals(methodName)) {
-        this.isCallingMethod = true;
-      }
-    }
-
-    public boolean checkIfisCallingMethod() throws CannotCompileException {
-      withinMethod.instrument(this);
-      return isCallingMethod;
     }
   }
 }
