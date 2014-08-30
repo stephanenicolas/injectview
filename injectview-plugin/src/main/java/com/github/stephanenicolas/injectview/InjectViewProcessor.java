@@ -133,7 +133,7 @@ public class InjectViewProcessor implements IClassTransformer {
     if (onCreateMethod != null) {
       log.debug("Has onCreate method already");
       boolean isCallingSetContentView =
-          checkIfMethodIsInvoked(classToTransform, onCreateMethod, "setContentView");
+          checkIfMethodIsInvoked(onCreateMethod, "setContentView");
 
       log.debug("onCreate invokes setContentView: " + isCallingSetContentView);
 
@@ -223,13 +223,9 @@ public class InjectViewProcessor implements IClassTransformer {
     injectStuffInFragment(clazz.getSuperclass());
   }
 
-  private boolean checkIfMethodIsInvoked(final CtClass clazz, CtMethod withinMethod,
+  private boolean checkIfMethodIsInvoked(CtMethod withinMethod,
       String invokedMethod) throws CannotCompileException {
-    DetectMethodCallEditor dectectSetContentViewEditor =
-        new DetectMethodCallEditor(clazz, invokedMethod);
-    withinMethod.instrument(dectectSetContentViewEditor);
-    boolean isCallingSetContentView = dectectSetContentViewEditor.isCallingMethod();
-    return isCallingSetContentView;
+    return new DetectMethodCallEditor(withinMethod, invokedMethod).checkIfisCallingMethod();
   }
 
   private String createOnCreateMethod(CtClass clazz, List<CtField> views, List<CtField> fragments,
@@ -498,10 +494,12 @@ public class InjectViewProcessor implements IClassTransformer {
 
   private final class DetectMethodCallEditor extends ExprEditor {
 
+    private CtMethod withinMethod;
     private String methodName;
     private boolean isCallingMethod;
 
-    private DetectMethodCallEditor(CtClass classToTransform, String methodName) {
+    private DetectMethodCallEditor(CtMethod withinMethod, String methodName) {
+      this.withinMethod = withinMethod;
       this.methodName = methodName;
     }
 
@@ -512,7 +510,8 @@ public class InjectViewProcessor implements IClassTransformer {
       }
     }
 
-    public boolean isCallingMethod() {
+    public boolean checkIfisCallingMethod() throws CannotCompileException {
+      withinMethod.instrument(this);
       return isCallingMethod;
     }
   }
