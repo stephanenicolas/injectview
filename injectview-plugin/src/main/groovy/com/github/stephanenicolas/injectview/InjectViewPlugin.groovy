@@ -17,7 +17,7 @@ public class InjectViewPlugin extends AbstractMorpheusPlugin {
   @Override
   protected void configure(Project project) {
     project.dependencies {
-      provided 'com.github.stephanenicolas.injectview:injectview-annotations:1.0.0-SNAPSHOT'
+      provided 'com.github.stephanenicolas.injectview:injectview-annotations:1.+'
     }
   }
 
