@@ -100,6 +100,14 @@ public class InjectViewProcessorForViewsWithActivityTest {
     assertThat((Integer) root.getTag(), is(CONTENT_VIEW_ID));
   }
 
+  @Test
+  public void shouldInjectView_withInheritance() {
+    TestActivityInherited activity = Robolectric.buildActivity(TestActivityInherited.class)
+        .create()
+        .get();
+    assertNotNull(activity.text1);
+    assertThat(activity.text1.getId(), is(VIEW_ID));
+  }
 
 
   public static class TestActivityWithId extends Activity {
@@ -223,5 +231,8 @@ public class InjectViewProcessorForViewsWithActivityTest {
       linearLayout.addView(text);
       setContentView(linearLayout);
     }
+  }
+
+  public static class TestActivityInherited extends TestActivityWithId {
   }
 }

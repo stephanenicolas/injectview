@@ -5,6 +5,7 @@ import com.github.stephanenicolas.afterburner.InsertableMethodBuilder;
 import com.github.stephanenicolas.afterburner.exception.AfterBurnerImpossibleException;
 import com.github.stephanenicolas.morpheus.commons.CtClassFilter;
 import com.github.stephanenicolas.morpheus.commons.JavassistUtils;
+import com.github.stephanenicolas.morpheus.commons.NullableUtils;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -269,6 +270,7 @@ public class InjectViewProcessor implements IClassTransformer {
       String getFragmentString =
           isUsingId ? ".findFragmentById(" + id + ")" : ".findFragmentByTag(\"" + tag + "\")";
       buffer.append(root + "." + getFragmentManagerString + getFragmentString + ";\n");
+      buffer.append(checkNullable(field));
     }
     return buffer.toString();
   }
@@ -322,6 +324,7 @@ public class InjectViewProcessor implements IClassTransformer {
             isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
       }
       buffer.append(root + "." + findViewString + ";\n");
+      buffer.append(checkNullable(field));
     }
     log.debug("Inserted :" + buffer.toString());
     return buffer.toString();
@@ -377,6 +380,7 @@ public class InjectViewProcessor implements IClassTransformer {
             isUsingId ? "findViewById(" + id + ")" : "findViewWithTag(\"" + tag + "\")";
       }
       buffer.append(root + "." + findViewString + ";\n");
+      buffer.append(checkNullable(field));
     }
     log.debug("Inserted :" + buffer.toString());
     return buffer.toString();
@@ -449,6 +453,26 @@ public class InjectViewProcessor implements IClassTransformer {
     }
     String string = buffer.toString();
     return string;
+  }
+
+  private String checkNullable(CtField field) throws NotFoundException {
+    String checkNullable = "";
+    String fieldName = field.getName();
+    try {
+      log.debug("Using pool in Nullable " + System.identityHashCode(field.getType().getClassPool()));
+      log.debug("Using pool in Nullable " + field.getType().getClassPool().get("android.support.annotation.Nullable"));
+    } catch (NotFoundException e) {
+      e.printStackTrace();
+    }
+
+    if (NullableUtils.isNotNullable(field)) {
+      checkNullable = "if ("
+          + fieldName
+          + " == null) {\n  throw new RuntimeException(\"Field "
+          + fieldName
+          + " is null and is not @Nullable.\"); \n}\n";
+    }
+    return checkNullable;
   }
 
   private static class InjectViewCtClassFilter implements CtClassFilter {
