@@ -1,8 +1,6 @@
 package com.github.stephanenicolas.injectview.statement;
 
-import com.github.stephanenicolas.injectview.binding.Binding;
 import com.github.stephanenicolas.injectview.binding.ContentViewBinding;
-import javassist.NotFoundException;
 
 /**
  * Created by administrateur on 2014-10-10.
@@ -15,8 +13,6 @@ public class ContentViewStatement extends Statement<ContentViewBinding> {
 
   @Override
   public StringBuilder append(StringBuilder builder) {
-    return builder.append("setContentView(")
-        .append(binding.getId())
-        .append(");");
+    return builder.append("setContentView(").append(binding.getId()).append(");");
   }
 }

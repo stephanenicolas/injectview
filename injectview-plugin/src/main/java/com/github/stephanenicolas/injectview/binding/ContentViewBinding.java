@@ -9,5 +9,4 @@ public class ContentViewBinding extends Binding {
   public ContentViewBinding(int id) {
     super(id);
   }
-
 }

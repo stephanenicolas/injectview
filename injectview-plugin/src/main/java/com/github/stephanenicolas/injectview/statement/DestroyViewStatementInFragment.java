@@ -17,5 +17,4 @@ public class DestroyViewStatementInFragment extends Statement<FieldBinding> {
     builder.append(" = null;");
     return builder;
   }
-
 }

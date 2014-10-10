@@ -12,7 +12,8 @@ public abstract class FieldBinding extends Binding {
   private boolean nullable;
   protected final boolean isUsingId;
 
-  public FieldBinding(String fieldName, String fieldTypeName, int id, String tag, boolean nullable) {
+  public FieldBinding(String fieldName, String fieldTypeName, int id, String tag,
+      boolean nullable) {
     super(id);
     this.tag = tag;
     this.name = fieldName;

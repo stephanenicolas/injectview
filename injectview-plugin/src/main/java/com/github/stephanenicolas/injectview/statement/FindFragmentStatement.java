@@ -1,12 +1,7 @@
 package com.github.stephanenicolas.injectview.statement;
 
 import com.github.stephanenicolas.injectview.binding.FragmentBinding;
-import com.github.stephanenicolas.injectview.binding.ViewBinding;
-import javassist.CtClass;
 import javassist.NotFoundException;
-
-import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isActivity;
-import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isView;
 
 /**
  * Created by administrateur on 2014-10-10.
@@ -22,7 +17,7 @@ public abstract class FindFragmentStatement extends FindStatement {
   @Override public StringBuilder append(StringBuilder builder) throws NotFoundException {
 
     String getFragmentManagerString;
-    if (((FragmentBinding)binding).isSupportFragment()) {
+    if (((FragmentBinding) binding).isSupportFragment()) {
       getFragmentManagerString = "getSupportFragmentManager()";
     } else {
       getFragmentManagerString = "getFragmentManager()";
@@ -35,8 +30,7 @@ public abstract class FindFragmentStatement extends FindStatement {
       findFragmentString = "findFragmentByTag(\"" + binding.getTag() + "\")";
     }
 
-    appendAssignment(builder)
-        .append(root)
+    appendAssignment(builder).append(root)
         .append('.')
         .append(getFragmentManagerString)
         .append('.')

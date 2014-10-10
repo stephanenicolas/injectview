@@ -6,7 +6,8 @@ package com.github.stephanenicolas.injectview.binding;
 public class FragmentBinding extends FieldBinding {
   private final boolean isSupportFragment;
 
-  public FragmentBinding(String name, String fieldTypeName, int id, String tag, boolean nullable, boolean isSupportFragment) {
+  public FragmentBinding(String name, String fieldTypeName, int id, String tag, boolean nullable,
+      boolean isSupportFragment) {
     super(name, fieldTypeName, id, tag, nullable);
     this.isSupportFragment = isSupportFragment;
   }

@@ -14,7 +14,8 @@ public class FindViewStatementForParam extends FindViewStatement {
   private CtClass[] paramClasses;
   private int indexParam;
 
-  public FindViewStatementForParam(ViewBinding viewBinding, CtClass[] paramClasses, int indexParam) {
+  public FindViewStatementForParam(ViewBinding viewBinding, CtClass[] paramClasses,
+      int indexParam) {
     super(viewBinding);
     this.paramClasses = paramClasses;
     this.indexParam = indexParam;

@@ -1,6 +1,5 @@
 package com.github.stephanenicolas.injectview.statement;
 
-import com.github.stephanenicolas.injectview.binding.Binding;
 import com.github.stephanenicolas.injectview.binding.FieldBinding;
 import javassist.NotFoundException;
 
@@ -13,7 +12,8 @@ public abstract class FindStatement extends Statement<FieldBinding> {
     super(binding);
   }
 
-  protected StringBuilder checkNullable(StringBuilder builder, FieldBinding binding) throws NotFoundException {
+  protected StringBuilder checkNullable(StringBuilder builder, FieldBinding binding)
+      throws NotFoundException {
     String fieldName = binding.getFieldName();
     if (!binding.isNullable()) {
       builder.append("if (")

@@ -3,15 +3,12 @@ package com.github.stephanenicolas.injectview.binding;
 import com.github.stephanenicolas.injectview.ContentView;
 import com.github.stephanenicolas.injectview.InjectFragment;
 import com.github.stephanenicolas.injectview.InjectView;
-import com.github.stephanenicolas.injectview.binding.Binding;
-import com.github.stephanenicolas.injectview.binding.FragmentBinding;
-import com.github.stephanenicolas.injectview.binding.ViewBinding;
 import com.github.stephanenicolas.morpheus.commons.NullableUtils;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.NotFoundException;
@@ -52,14 +49,14 @@ public class Binder {
   private ContentViewBinding extractContentViewBinding(CtClass clazz)
       throws ClassNotFoundException, NotFoundException {
 
-      try {
-        Object annotation = clazz.getAnnotation(ContentView.class);
-        Class annotationClass = annotation.getClass();
-        Method method = annotationClass.getMethod("value");
-        return new ContentViewBinding((Integer) method.invoke(annotation));
-      } catch (Exception e) {
-        return null;
-      }
+    try {
+      Object annotation = clazz.getAnnotation(ContentView.class);
+      Class annotationClass = annotation.getClass();
+      Method method = annotationClass.getMethod("value");
+      return new ContentViewBinding((Integer) method.invoke(annotation));
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   private List<ViewBinding> extractViewBindings(CtClass clazz)

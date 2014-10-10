@@ -22,7 +22,8 @@ public abstract class Statement<T extends Binding> {
       StringBuilder builder = new StringBuilder();
       return append(builder).toString();
     } catch (NotFoundException e) {
-      throw new RuntimeException("Impossible to create a string representation of this statement.", e);
+      throw new RuntimeException("Impossible to create a string representation of this statement.",
+          e);
     }
   }
 }

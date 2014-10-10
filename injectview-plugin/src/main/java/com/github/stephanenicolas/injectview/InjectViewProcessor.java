@@ -15,7 +15,6 @@ import com.github.stephanenicolas.injectview.statement.FindViewStatementForParam
 import com.github.stephanenicolas.injectview.statement.FindViewStatementInActivityOrFragmentOrView;
 import com.github.stephanenicolas.morpheus.commons.CtClassFilter;
 import com.github.stephanenicolas.morpheus.commons.JavassistUtils;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import javassist.CannotCompileException;
@@ -151,7 +150,8 @@ public class InjectViewProcessor implements IClassTransformer {
           .inMethodIfExists("onCreate")
           .afterACallTo(insertionMethod)
           .withBody(createInjectedBody(classToTransform, views, fragments,
-              contentViewBinding)).elseCreateMethodIfNotExists("") //not used, we are sure the method exists
+              contentViewBinding)).elseCreateMethodIfNotExists(
+          "") //not used, we are sure the method exists
           .doIt();
     } else {
       log.debug("Does not have onCreate method yet");
@@ -229,12 +229,13 @@ public class InjectViewProcessor implements IClassTransformer {
         .toString();
   }
 
-  private StringBuilder injectContentView(ContentViewBinding contentViewBinding, StringBuilder builder) {
+  private StringBuilder injectContentView(ContentViewBinding contentViewBinding,
+      StringBuilder builder) {
     return new ContentViewStatement(contentViewBinding).append(builder).append('\n');
   }
 
-  private StringBuilder injectFragmentStatements(List<FragmentBinding> fragmentBindings, StringBuilder builder)
-      throws ClassNotFoundException, NotFoundException {
+  private StringBuilder injectFragmentStatements(List<FragmentBinding> fragmentBindings,
+      StringBuilder builder) throws ClassNotFoundException, NotFoundException {
 
     for (FragmentBinding fragmentBinding : fragmentBindings) {
       new FindFragmentStatementInActivityOrFragment(fragmentBinding).append(builder);
@@ -251,8 +252,8 @@ public class InjectViewProcessor implements IClassTransformer {
     return builder;
   }
 
-  private StringBuilder injectViewStatements(CtClass targetClazz, List<ViewBinding> viewBindings, StringBuilder builder)
-      throws ClassNotFoundException, NotFoundException {
+  private StringBuilder injectViewStatements(CtClass targetClazz, List<ViewBinding> viewBindings,
+      StringBuilder builder) throws ClassNotFoundException, NotFoundException {
 
     for (ViewBinding viewBinding : viewBindings) {
       new FindViewStatementInActivityOrFragmentOrView(targetClazz, viewBinding).append(builder);
@@ -261,7 +262,8 @@ public class InjectViewProcessor implements IClassTransformer {
   }
 
   private StringBuilder injectViewStatementsForParam(List<ViewBinding> viewBindings,
-      CtClass[] paramClasses, int indexParam, StringBuilder builder) throws ClassNotFoundException, NotFoundException {
+      CtClass[] paramClasses, int indexParam, StringBuilder builder)
+      throws ClassNotFoundException, NotFoundException {
 
     for (ViewBinding viewBinding : viewBindings) {
       new FindViewStatementForParam(viewBinding, paramClasses, indexParam).append(builder);
@@ -288,10 +290,8 @@ public class InjectViewProcessor implements IClassTransformer {
     boolean isView = isView(clazz);
 
     StringBuilder builder = new StringBuilder();
-    String message = String.format("Class %s has been enhanced.", clazz.getName());
-    builder.append("android.util.Log.d(\"RoboGuice post-processor\",\"" + message + "\");\n");
 
-    if (contentViewBinding!=null) {
+    if (contentViewBinding != null) {
       injectContentView(contentViewBinding, builder);
     }
 
