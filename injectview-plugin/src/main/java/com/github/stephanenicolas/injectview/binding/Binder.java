@@ -1,5 +1,6 @@
 package com.github.stephanenicolas.injectview.binding;
 
+import com.github.stephanenicolas.injectview.ContentView;
 import com.github.stephanenicolas.injectview.InjectFragment;
 import com.github.stephanenicolas.injectview.InjectView;
 import com.github.stephanenicolas.injectview.binding.Binding;
@@ -25,12 +26,15 @@ public class Binder {
 
   private Map<CtClass, List<ViewBinding>> mapClassToViewBindings = new HashMap<>();
   private Map<CtClass, List<FragmentBinding>> mapClassToFragmentBindings = new HashMap<>();
+  private Map<CtClass, ContentViewBinding> mapClassToContentViewBinding = new HashMap<>();
 
   public void extractAllBindings(CtClass clazz) throws NotFoundException, ClassNotFoundException {
     List<ViewBinding> viewBindings = extractViewBindings(clazz);
     List<FragmentBinding> fragmentBindings = extractFragmentBindings(clazz);
+    ContentViewBinding contentViewbinding = extractContentViewBinding(clazz);
     mapClassToViewBindings.put(clazz, viewBindings);
     mapClassToFragmentBindings.put(clazz, fragmentBindings);
+    mapClassToContentViewBinding.put(clazz, contentViewbinding);
   }
 
   public List<ViewBinding> getViewBindings(CtClass clazz) {
@@ -39,6 +43,23 @@ public class Binder {
 
   public List<FragmentBinding> getFragmentBindings(CtClass clazz) {
     return mapClassToFragmentBindings.get(clazz);
+  }
+
+  public ContentViewBinding getContentViewBinding(CtClass clazz) {
+    return mapClassToContentViewBinding.get(clazz);
+  }
+
+  private ContentViewBinding extractContentViewBinding(CtClass clazz)
+      throws ClassNotFoundException, NotFoundException {
+
+      try {
+        Object annotation = clazz.getAnnotation(ContentView.class);
+        Class annotationClass = annotation.getClass();
+        Method method = annotationClass.getMethod("value");
+        return new ContentViewBinding((Integer) method.invoke(annotation));
+      } catch (Exception e) {
+        return null;
+      }
   }
 
   private List<ViewBinding> extractViewBindings(CtClass clazz)
@@ -107,7 +128,8 @@ public class Binder {
       boolean isSupportFragment = isSupportFragment(field.getType());
 
       FragmentBinding fragmentBinding =
-          new FragmentBinding(field.getName(), field.getType().getName(), id, tag, nullable, isSupportFragment);
+          new FragmentBinding(field.getName(), field.getType().getName(), id, tag, nullable,
+              isSupportFragment);
 
       fragmentBindings.add(fragmentBinding);
     }

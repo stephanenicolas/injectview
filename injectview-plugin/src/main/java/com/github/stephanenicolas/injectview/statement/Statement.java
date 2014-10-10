@@ -6,13 +6,13 @@ import javassist.NotFoundException;
 /**
  * Created by administrateur on 2014-10-10.
  */
-public abstract class Statement {
+public abstract class Statement<T extends Binding> {
 
-  protected Binding binding;
+  protected T binding;
 
   public abstract StringBuilder append(StringBuilder stringBuilder) throws NotFoundException;
 
-  protected Statement(Binding binding) {
+  protected Statement(T binding) {
     this.binding = binding;
   }
 
@@ -25,18 +25,4 @@ public abstract class Statement {
       throw new RuntimeException("Impossible to create a string representation of this statement.", e);
     }
   }
-
-  protected StringBuilder checkNullable(StringBuilder builder, Binding binding) throws NotFoundException {
-    String fieldName = binding.getFieldName();
-    if (!binding.isNullable()) {
-      builder.append("if (")
-          .append(fieldName)
-          .append(" == null) {\n  throw new RuntimeException(\"Field ")
-          .append(fieldName)
-          .append(" is null and is not @Nullable.\"); \n}\n");
-    }
-    return builder;
-  }
-
-
 }

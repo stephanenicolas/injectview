@@ -11,8 +11,8 @@ import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isView;
 /**
  * Created by administrateur on 2014-10-10.
  */
-public class FindFragmentStatement extends FindStatement {
-  private String root;
+public abstract class FindFragmentStatement extends FindStatement {
+  protected String root;
 
   public FindFragmentStatement(String root, FragmentBinding fragmentBinding) {
     super(fragmentBinding);
@@ -35,8 +35,8 @@ public class FindFragmentStatement extends FindStatement {
       findFragmentString = "findFragmentByTag(\"" + binding.getTag() + "\")";
     }
 
-    super.append(builder);
-    builder.append(root)
+    appendAssignment(builder)
+        .append(root)
         .append('.')
         .append(getFragmentManagerString)
         .append('.')

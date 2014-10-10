@@ -1,6 +1,7 @@
 package com.github.stephanenicolas.injectview.statement;
 
 import com.github.stephanenicolas.injectview.binding.Binding;
+import com.github.stephanenicolas.injectview.binding.FieldBinding;
 import javassist.NotFoundException;
 
 /**
@@ -8,11 +9,14 @@ import javassist.NotFoundException;
  */
 public abstract class FindViewStatement extends FindStatement {
 
-  protected FindViewStatement(Binding binding) {
+  protected FindViewStatement(FieldBinding binding) {
     super(binding);
   }
 
-  protected StringBuilder appendFindViewStatement(boolean isActivity, StringBuilder builder) {
+  protected StringBuilder appendFindViewStatement(String root, boolean isActivity, StringBuilder builder) {
+
+    builder.append(root).append('.');
+
     if (isActivity) {
       if (binding.isUsingId()) {
         builder.append("findViewById(")
@@ -21,8 +25,7 @@ public abstract class FindViewStatement extends FindStatement {
       } else {
         builder.append("getWindow().getDecorView().findViewWithTag(\"")
             .append(binding.getTag())
-            .append("\")")
-            .toString();
+            .append("\")");
       }
     } else {
       if (binding.isUsingId()) {
@@ -35,6 +38,8 @@ public abstract class FindViewStatement extends FindStatement {
             .append("\")");
       }
     }
+
+    builder.append(";\n");
     return builder;
   }
 }

@@ -10,15 +10,16 @@ import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isView;
 /**
  * Created by administrateur on 2014-10-10.
  */
-public class FindViewStatementInActivity extends FindViewStatement {
+public class FindViewStatementInActivityOrFragmentOrView extends FindViewStatement {
   private CtClass targetClazz;
 
-  public FindViewStatementInActivity(CtClass targetClazz, ViewBinding viewBinding) {
+  public FindViewStatementInActivityOrFragmentOrView(CtClass targetClazz, ViewBinding viewBinding) {
     super(viewBinding);
     this.targetClazz = targetClazz;
   }
 
-  @Override public StringBuilder append(StringBuilder builder) throws NotFoundException {
+  @Override
+  public StringBuilder append(StringBuilder builder) throws NotFoundException {
     boolean isActivity = isActivity(targetClazz);
     boolean isView = isView(targetClazz);
 
@@ -29,14 +30,8 @@ public class FindViewStatementInActivity extends FindViewStatement {
       root = "$1";
     }
 
-
-
-    super.append(builder);
-    builder.append(root).append(".");
-
-    appendFindViewStatement(isActivity, builder)
-    .append(";\n");
-
+    appendAssignment(builder);
+    appendFindViewStatement(root, isActivity, builder);
     checkNullable(builder, binding);
 
     return builder;

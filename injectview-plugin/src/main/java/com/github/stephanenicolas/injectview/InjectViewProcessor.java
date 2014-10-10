@@ -4,23 +4,23 @@ import com.github.stephanenicolas.afterburner.AfterBurner;
 import com.github.stephanenicolas.afterburner.InsertableMethodBuilder;
 import com.github.stephanenicolas.afterburner.exception.AfterBurnerImpossibleException;
 import com.github.stephanenicolas.injectview.binding.Binder;
-import com.github.stephanenicolas.injectview.binding.Binding;
+import com.github.stephanenicolas.injectview.binding.ContentViewBinding;
 import com.github.stephanenicolas.injectview.binding.FragmentBinding;
 import com.github.stephanenicolas.injectview.binding.ViewBinding;
+import com.github.stephanenicolas.injectview.statement.ContentViewStatement;
 import com.github.stephanenicolas.injectview.statement.DestroyViewStatementInFragment;
-import com.github.stephanenicolas.injectview.statement.FindFragmentStatement;
+import com.github.stephanenicolas.injectview.statement.FindFragmentStatementForParam;
+import com.github.stephanenicolas.injectview.statement.FindFragmentStatementInActivityOrFragment;
 import com.github.stephanenicolas.injectview.statement.FindViewStatementForParam;
-import com.github.stephanenicolas.injectview.statement.FindViewStatementInActivity;
+import com.github.stephanenicolas.injectview.statement.FindViewStatementInActivityOrFragmentOrView;
 import com.github.stephanenicolas.morpheus.commons.CtClassFilter;
 import com.github.stephanenicolas.morpheus.commons.JavassistUtils;
-import com.github.stephanenicolas.morpheus.commons.NullableUtils;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtConstructor;
-import javassist.CtField;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.NotFoundException;
@@ -79,6 +79,7 @@ public class InjectViewProcessor implements IClassTransformer {
 
   @Override
   public boolean shouldTransform(CtClass candidateClass) throws JavassistBuildException {
+
     try {
       binder.extractAllBindings(candidateClass);
       final List<ViewBinding> viewBindings = binder.getViewBindings(candidateClass);
@@ -129,6 +130,7 @@ public class InjectViewProcessor implements IClassTransformer {
       List<FragmentBinding> fragments)
       throws NotFoundException, ClassNotFoundException, CannotCompileException,
       AfterBurnerImpossibleException, JavassistBuildException {
+
     log.debug("Injecting stuff in " + classToTransform.getSimpleName());
     CtMethod onCreateMethod = afterBurner.extractExistingMethod(classToTransform, "onCreate");
     if (onCreateMethod != null) {
@@ -139,25 +141,23 @@ public class InjectViewProcessor implements IClassTransformer {
       log.debug("onCreate invokes setContentView: " + isCallingSetContentView);
 
       String insertionMethod = "onCreate";
-      int layoutId = -1;
-      if (isCallingSetContentView) {
+      ContentViewBinding contentViewBinding = binder.getContentViewBinding(classToTransform);
+      if (contentViewBinding == null) {
         insertionMethod = "setContentView";
-      } else {
-        layoutId = getLayoutId(classToTransform);
       }
       InsertableMethodBuilder builder = new InsertableMethodBuilder(afterBurner);
 
       builder.insertIntoClass(classToTransform)
           .inMethodIfExists("onCreate")
           .afterACallTo(insertionMethod)
-          .withBody(createInjectedBody(classToTransform, views, fragments, layoutId))
-          .elseCreateMethodIfNotExists("") //not used, we are sure the method exists
+          .withBody(createInjectedBody(classToTransform, views, fragments,
+              contentViewBinding)).elseCreateMethodIfNotExists("") //not used, we are sure the method exists
           .doIt();
     } else {
       log.debug("Does not have onCreate method yet");
-      int layoutId = getLayoutId(classToTransform);
+      ContentViewBinding contentViewBinding = binder.getContentViewBinding(classToTransform);
       String onCreateMethodFull =
-          createOnCreateMethod(classToTransform, views, fragments, layoutId);
+          createOnCreateMethod(classToTransform, views, fragments, contentViewBinding);
       classToTransform.addMethod(CtNewMethod.make(onCreateMethodFull, classToTransform));
       log.debug("Inserted " + onCreateMethodFull);
     }
@@ -168,8 +168,9 @@ public class InjectViewProcessor implements IClassTransformer {
       List<FragmentBinding> fragments)
       throws NotFoundException, ClassNotFoundException, CannotCompileException,
       AfterBurnerImpossibleException, JavassistBuildException {
+
     afterBurner.afterOverrideMethod(classToTransform, "onViewCreated",
-        createInjectedBody(classToTransform, views, fragments, -1));
+        createInjectedBody(classToTransform, views, fragments, null));
 
     afterBurner.afterOverrideMethod(classToTransform, "onDestroyView",
         destroyViewStatements(views));
@@ -180,16 +181,18 @@ public class InjectViewProcessor implements IClassTransformer {
   private void injectStuffInView(final CtClass classToTransform, List<ViewBinding> viewBindings)
       throws NotFoundException, ClassNotFoundException, CannotCompileException,
       AfterBurnerImpossibleException, JavassistBuildException {
+
     if (viewBindings.isEmpty()) {
       return;
     }
 
     afterBurner.afterOverrideMethod(classToTransform, "onFinishInflate",
-        createInjectedBody(classToTransform, viewBindings, new ArrayList<FragmentBinding>(), -1));
+        createInjectedBody(classToTransform, viewBindings, new ArrayList<FragmentBinding>(), null));
     classToTransform.detach();
   }
 
-  private void injectStuffInClass(final CtClass clazz, List<ViewBinding> views, List<FragmentBinding> fragments)
+  private void injectStuffInClass(final CtClass clazz, List<ViewBinding> views,
+      List<FragmentBinding> fragments)
       throws NotFoundException, ClassNotFoundException, CannotCompileException,
       AfterBurnerImpossibleException {
 
@@ -204,7 +207,7 @@ public class InjectViewProcessor implements IClassTransformer {
         //indexValidParam is > 0 at this stage
         constructor.insertBeforeBody(
             createInjectedBodyWithParam(clazz, constructor.getParameterTypes(), indexValidParam,
-                views, fragments, -1));
+                views, fragments));
       }
     } else {
       log.warn(
@@ -214,136 +217,123 @@ public class InjectViewProcessor implements IClassTransformer {
     clazz.detach();
   }
 
-  private String createOnCreateMethod(CtClass clazz, List<ViewBinding> views, List<FragmentBinding> fragments,
-      int layoutId) throws ClassNotFoundException, NotFoundException, JavassistBuildException {
-    return "public void onCreate(android.os.Bundle savedInstanceState) { \n"
-        + "super.onCreate(savedInstanceState);\n"
-        + createInjectedBody(clazz, views, fragments, layoutId)
-        + "}";
+  private String createOnCreateMethod(CtClass clazz, List<ViewBinding> views,
+      List<FragmentBinding> fragments, ContentViewBinding contentViewBinding)
+      throws ClassNotFoundException, NotFoundException, JavassistBuildException {
+
+    return new StringBuilder().append(
+        "public void onCreate(android.os.Bundle savedInstanceState) { \n")
+        .append("super.onCreate(savedInstanceState);\n")
+        .append(createInjectedBody(clazz, views, fragments, contentViewBinding))
+        .append("}")
+        .toString();
   }
 
-  private int getLayoutId(final CtClass classToTransform) {
-    try {
-      Object annotation = classToTransform.getAnnotation(ContentView.class);
-      Class clazz = annotation.getClass();
-      Method method = clazz.getMethod("value");
-      return (Integer) method.invoke(annotation);
-    } catch (Exception e) {
-      return -1;
-    }
+  private StringBuilder injectContentView(ContentViewBinding contentViewBinding, StringBuilder builder) {
+    return new ContentViewStatement(contentViewBinding).append(builder).append('\n');
   }
 
-  private String injectContentView(int layoutId) {
-    return "setContentView(" + layoutId + ");\n";
-  }
-
-  private String injectFragmentStatements(List<FragmentBinding> fragmentBindings, String root) throws ClassNotFoundException, NotFoundException {
-    StringBuilder builder = new StringBuilder();
-    for (FragmentBinding fragmentBinding : fragmentBindings) {
-
-      FindFragmentStatement statement = new FindFragmentStatement(root, fragmentBinding);
-      statement.append(builder);
-    }
-    return builder.toString();
-  }
-
-  private String injectViewStatements(CtClass targetClazz, List<ViewBinding> viewBindings)
+  private StringBuilder injectFragmentStatements(List<FragmentBinding> fragmentBindings, StringBuilder builder)
       throws ClassNotFoundException, NotFoundException {
-    StringBuilder buffer = new StringBuilder();
-    for (ViewBinding viewBinding : viewBindings) {
-      new FindViewStatementInActivity(targetClazz, viewBinding).append(buffer);
+
+    for (FragmentBinding fragmentBinding : fragmentBindings) {
+      new FindFragmentStatementInActivityOrFragment(fragmentBinding).append(builder);
     }
-    log.debug("Inserted :" + buffer.toString());
-    return buffer.toString();
+    return builder;
   }
 
-  private String injectViewStatementsForParam(List<ViewBinding> viewBindings, CtClass[] paramClasses,
-      int indexParam) throws ClassNotFoundException, NotFoundException {
-    CtClass targetClazz = paramClasses[indexParam];
-    boolean isActivity = isActivity(targetClazz);
-    boolean isView = isView(targetClazz);
+  private StringBuilder injectFragmentStatementsForParam(List<FragmentBinding> fragmentBindings,
+      int indexParam, StringBuilder builder) throws ClassNotFoundException, NotFoundException {
 
-    StringBuilder builder = new StringBuilder();
-    for (ViewBinding viewBinding : viewBindings) {
-      new FindViewStatementForParam(paramClasses, viewBinding, indexParam).append(builder);
+    for (FragmentBinding fragmentBinding : fragmentBindings) {
+      new FindFragmentStatementForParam(fragmentBinding, indexParam).append(builder);
     }
-    log.debug("Inserted :" + builder.toString());
-    return builder.toString();
+    return builder;
+  }
+
+  private StringBuilder injectViewStatements(CtClass targetClazz, List<ViewBinding> viewBindings, StringBuilder builder)
+      throws ClassNotFoundException, NotFoundException {
+
+    for (ViewBinding viewBinding : viewBindings) {
+      new FindViewStatementInActivityOrFragmentOrView(targetClazz, viewBinding).append(builder);
+    }
+    return builder;
+  }
+
+  private StringBuilder injectViewStatementsForParam(List<ViewBinding> viewBindings,
+      CtClass[] paramClasses, int indexParam, StringBuilder builder) throws ClassNotFoundException, NotFoundException {
+
+    for (ViewBinding viewBinding : viewBindings) {
+      new FindViewStatementForParam(viewBinding, paramClasses, indexParam).append(builder);
+    }
+    return builder;
   }
 
   private String destroyViewStatements(List<ViewBinding> viewBindings) {
+
     StringBuilder builder = new StringBuilder();
     for (ViewBinding viewBinding : viewBindings) {
-      new DestroyViewStatementInFragment(viewBinding)
-          .append(builder)
-          .append('\n');
+      new DestroyViewStatementInFragment(viewBinding).append(builder).append('\n');
     }
     return builder.toString();
   }
 
-  private String createInjectedBody(CtClass clazz, List<ViewBinding> views, List<FragmentBinding> fragments,
-      int layoutId) throws ClassNotFoundException, NotFoundException, JavassistBuildException {
+  private String createInjectedBody(CtClass clazz, List<ViewBinding> views,
+      List<FragmentBinding> fragments, ContentViewBinding contentViewBinding)
+      throws ClassNotFoundException, NotFoundException, JavassistBuildException {
+
     boolean isActivity = isActivity(clazz);
     boolean isFragment = isFragment(clazz);
     boolean isSupportFragment = isSupportFragment(clazz);
     boolean isView = isView(clazz);
 
-    StringBuffer buffer = new StringBuffer();
+    StringBuilder builder = new StringBuilder();
     String message = String.format("Class %s has been enhanced.", clazz.getName());
-    buffer.append("android.util.Log.d(\"RoboGuice post-processor\",\"" + message + "\");\n");
+    builder.append("android.util.Log.d(\"RoboGuice post-processor\",\"" + message + "\");\n");
 
-    if (layoutId != -1) {
-      buffer.append(injectContentView(layoutId));
+    if (contentViewBinding!=null) {
+      injectContentView(contentViewBinding, builder);
     }
+
     if (!views.isEmpty()) {
-      buffer.append(injectViewStatements(clazz, views));
+      injectViewStatements(clazz, views, builder);
     }
 
     if (!fragments.isEmpty()) {
-      if( isView) {
-        throw new JavassistBuildException("Impossible to use InjectFragments in views. View: " + clazz.getName());
-      }
-      else if (isActivity || isFragment || isSupportFragment) {
-        buffer.append(injectFragmentStatements(fragments, "this"));
+      if (isView) {
+        throw new JavassistBuildException(
+            "Impossible to use InjectFragments in views. View: " + clazz.getName());
+      } else if (isActivity || isFragment || isSupportFragment) {
+        injectFragmentStatements(fragments, builder);
       }
     }
 
-    return buffer.toString();
+    return builder.toString();
   }
 
-  private String createInjectedBodyWithParam(CtClass clazz, CtClass[] paramClasses, int paramIndex,
-      List<ViewBinding> viewBindings, List<FragmentBinding> fragmentBindings, int layoutId)
+  private String createInjectedBodyWithParam(CtClass clazz, CtClass[] paramClasses, int indexParam,
+      List<ViewBinding> viewBindings, List<FragmentBinding> fragmentBindings)
       throws ClassNotFoundException, NotFoundException {
-    CtClass paramClass = paramClasses[paramIndex];
-    boolean isActivity = isActivity(paramClass);
-    boolean isFragment = isFragment(paramClass);
-    boolean isSupportFragment = isSupportFragment(paramClass);
 
-    StringBuffer buffer = new StringBuffer();
+    StringBuilder builder = new StringBuilder();
     String message = String.format("Class %s has been enhanced.", clazz.getName());
-    buffer.append("android.util.Log.d(\"RoboGuice post-processor\",\"" + message + "\");\n");
+    builder.append("android.util.Log.d(\"RoboGuice post-processor\",\"" + message + "\");\n");
 
-    if (layoutId != -1) {
-      buffer.append(injectContentView(layoutId));
-    }
     if (!viewBindings.isEmpty()) {
-      buffer.append(injectViewStatementsForParam(viewBindings, paramClasses, paramIndex));
+      injectViewStatementsForParam(viewBindings, paramClasses, indexParam, builder);
     }
 
     if (!fragmentBindings.isEmpty()) {
-      if (isActivity) {
-        buffer.append(injectFragmentStatements(fragmentBindings, "$" + (1 + paramIndex)));
-      } else if (isFragment || isSupportFragment) {
-        buffer.append(injectFragmentStatements(fragmentBindings, "$" + (1 + paramIndex)));
-      }
+      injectFragmentStatementsForParam(fragmentBindings, indexParam, builder);
     }
-    String string = buffer.toString();
-    return string;
+    log.debug("Inserted :" + builder.toString());
+    return builder.toString();
   }
 
-
   private static class InjectViewCtClassFilter implements CtClassFilter {
-    @Override public boolean isValid(CtClass clazz) throws NotFoundException {
+    @Override
+    public boolean isValid(CtClass clazz) throws NotFoundException {
+
       return isActivity(clazz) || isView(clazz) || isFragment(clazz) || isSupportFragment(clazz);
     }
   }

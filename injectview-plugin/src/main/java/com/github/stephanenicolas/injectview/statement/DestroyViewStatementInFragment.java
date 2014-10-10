@@ -1,11 +1,12 @@
 package com.github.stephanenicolas.injectview.statement;
 
+import com.github.stephanenicolas.injectview.binding.FieldBinding;
 import com.github.stephanenicolas.injectview.binding.ViewBinding;
 
 /**
  * Created by administrateur on 2014-10-10.
  */
-public class DestroyViewStatementInFragment extends Statement {
+public class DestroyViewStatementInFragment extends Statement<FieldBinding> {
 
   public DestroyViewStatementInFragment(ViewBinding viewBinding) {
     super(viewBinding);

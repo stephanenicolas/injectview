@@ -14,7 +14,7 @@ public class FindViewStatementForParam extends FindViewStatement {
   private CtClass[] paramClasses;
   private int indexParam;
 
-  public FindViewStatementForParam(CtClass[] paramClasses, ViewBinding viewBinding, int indexParam) {
+  public FindViewStatementForParam(ViewBinding viewBinding, CtClass[] paramClasses, int indexParam) {
     super(viewBinding);
     this.paramClasses = paramClasses;
     this.indexParam = indexParam;
@@ -32,14 +32,8 @@ public class FindViewStatementForParam extends FindViewStatement {
       root = "$" + (1 + indexParam) + ".getView()";
     }
 
-
-
-    super.append(builder)
-    .append(root).append(".");
-
-    appendFindViewStatement(isActivity, builder)
-    .append(";\n");
-
+    appendAssignment(builder);
+    appendFindViewStatement(root, isActivity, builder);
     checkNullable(builder, binding);
 
     return builder;
