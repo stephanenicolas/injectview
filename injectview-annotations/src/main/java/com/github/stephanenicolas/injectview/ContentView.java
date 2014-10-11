@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * The value corresponds to the id of the view.<br />
  *
  * Usage example:<br />
- * {@code @ContentView(R.layout.main_layout) class MyActivity extends ... {}<br/>
+ * <tt> @ContentView(R.layout.main_layout) class MyActivity extends ... {}</tt></><br/>
  *
  * @author Mike Burton
  */

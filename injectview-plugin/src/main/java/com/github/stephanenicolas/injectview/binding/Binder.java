@@ -17,7 +17,8 @@ import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.getAllI
 import static com.github.stephanenicolas.morpheus.commons.JavassistUtils.isSupportFragment;
 
 /**
- * Created by administrateur on 2014-10-10.
+ * Retrieves bindings from a given class.
+ * @author SNI
  */
 public class Binder {
 
@@ -51,7 +52,7 @@ public class Binder {
 
     try {
       Object annotation = clazz.getAnnotation(ContentView.class);
-      Class annotationClass = annotation.getClass();
+      Class<?> annotationClass = annotation.getClass();
       Method method = annotationClass.getMethod("value");
       return new ContentViewBinding((Integer) method.invoke(annotation));
     } catch (Exception e) {
@@ -67,23 +68,9 @@ public class Binder {
     List<ViewBinding> viewBindings = new ArrayList<>();
 
     for (CtField field : views) {
-      Object annotation = field.getAnnotation(InjectView.class);
-      //must be accessed by introspection as I get a Proxy during tests.
-      //this proxy comes from Robolectric
-      Class annotionClass = annotation.getClass();
+      final int id = extractIdFromAnnotation(field, InjectView.class);
+      final String tag = extractTagFromAnnotation(field, InjectView.class);
 
-      //workaround for robolectric
-      //https://github.com/robolectric/robolectric/pull/1240
-      int id = 0;
-      String tag = "";
-      try {
-        Method method = annotionClass.getMethod("value");
-        id = (Integer) method.invoke(annotation);
-        method = annotionClass.getMethod("tag");
-        tag = (String) method.invoke(annotation);
-      } catch (Exception e) {
-        throw new RuntimeException("How can we get here ?");
-      }
       boolean nullable = NullableUtils.isNullable(field);
 
       ViewBinding viewBinding =
@@ -102,23 +89,8 @@ public class Binder {
     List<FragmentBinding> fragmentBindings = new ArrayList<>();
 
     for (CtField field : views) {
-      Object annotation = field.getAnnotation(InjectFragment.class);
-      //must be accessed by introspection as I get a Proxy during tests.
-      //this proxy comes from Robolectric
-      Class annotionClass = annotation.getClass();
-
-      //workaround for robolectric
-      //https://github.com/robolectric/robolectric/pull/1240
-      int id = 0;
-      String tag = "";
-      try {
-        Method method = annotionClass.getMethod("value");
-        id = (Integer) method.invoke(annotation);
-        method = annotionClass.getMethod("tag");
-        tag = (String) method.invoke(annotation);
-      } catch (Exception e) {
-        throw new RuntimeException("How can we get here ?");
-      }
+      final int id = extractIdFromAnnotation(field, InjectFragment.class);
+      final String tag = extractTagFromAnnotation(field, InjectFragment.class);
 
       boolean nullable = NullableUtils.isNullable(field);
 
@@ -131,5 +103,39 @@ public class Binder {
       fragmentBindings.add(fragmentBinding);
     }
     return fragmentBindings;
+  }
+
+  private String extractTagFromAnnotation(CtField field, Class<?> clz) {
+    String tag;
+    //workaround for robolectric
+    //https://github.com/robolectric/robolectric/pull/1240
+    try {
+      Object annotation = field.getAnnotation(clz);
+      //must be accessed by introspection as I get a Proxy during tests.
+      //this proxy comes from Robolectric
+      Class<?> annotationClass = annotation.getClass();
+      Method method = annotationClass.getMethod("tag");
+      tag = (String) method.invoke(annotation);
+    } catch (Exception e) {
+      throw new RuntimeException("How can we get here ?");
+    }
+    return tag;
+  }
+
+  private int extractIdFromAnnotation(CtField field, Class<?> clz) {
+    int id;
+    //workaround for robolectric
+    //https://github.com/robolectric/robolectric/pull/1240
+    try {
+      Object annotation = field.getAnnotation(clz);
+      //must be accessed by introspection as I get a Proxy during tests.
+      //this proxy comes from Robolectric
+      Class<?> annotationClass = annotation.getClass();
+      Method method = annotationClass.getMethod("value");
+      id = (Integer) method.invoke(annotation);
+    } catch (Exception e) {
+      throw new RuntimeException("How can we get here ?");
+    }
+    return id;
   }
 }

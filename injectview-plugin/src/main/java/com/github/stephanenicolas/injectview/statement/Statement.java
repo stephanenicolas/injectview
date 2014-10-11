@@ -4,17 +4,31 @@ import com.github.stephanenicolas.injectview.binding.Binding;
 import javassist.NotFoundException;
 
 /**
- * Created by administrateur on 2014-10-10.
+ * A Java statement that will be used to generate byte code that will be weaved.
+ * A statement is issued for a {@link Binding}.
+ * Created by SNI.
  */
 public abstract class Statement<T extends Binding> {
 
+  /** The binding for which the statement will be issued.*/
   protected T binding;
 
-  public abstract StringBuilder append(StringBuilder stringBuilder) throws NotFoundException;
-
+  /**
+   * Creates a new statement for a given binding.
+   * @param binding
+   */
   protected Statement(T binding) {
     this.binding = binding;
   }
+
+  /**
+   * Appends the present statement to {@code builder}.
+   * @param builder the StringBuilder to append the statement to.
+   * @return the {@code builder}
+   * @throws NotFoundException
+   */
+  public abstract StringBuilder append(StringBuilder builder) throws NotFoundException;
+
 
   @Override
   public String toString() {

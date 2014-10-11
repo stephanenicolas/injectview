@@ -9,10 +9,8 @@ import com.github.stephanenicolas.injectview.binding.FragmentBinding;
 import com.github.stephanenicolas.injectview.binding.ViewBinding;
 import com.github.stephanenicolas.injectview.statement.ContentViewStatement;
 import com.github.stephanenicolas.injectview.statement.DestroyViewStatementInFragment;
-import com.github.stephanenicolas.injectview.statement.FindFragmentStatementForParam;
-import com.github.stephanenicolas.injectview.statement.FindFragmentStatementInActivityOrFragment;
-import com.github.stephanenicolas.injectview.statement.FindViewStatementForParam;
-import com.github.stephanenicolas.injectview.statement.FindViewStatementInActivityOrFragmentOrView;
+import com.github.stephanenicolas.injectview.statement.FindFragmentStatement;
+import com.github.stephanenicolas.injectview.statement.FindViewStatement;
 import com.github.stephanenicolas.morpheus.commons.CtClassFilter;
 import com.github.stephanenicolas.morpheus.commons.JavassistUtils;
 import java.util.ArrayList;
@@ -72,7 +70,7 @@ import static java.lang.String.format;
 @Slf4j
 public class InjectViewProcessor implements IClassTransformer {
 
-  private CtClassFilter injectViewfilter = new InjectViewCtClassFilter();
+  private CtClassFilter injectViewFilter = new InjectViewCtClassFilter();
   private AfterBurner afterBurner = new AfterBurner();
   private Binder binder = new Binder();
 
@@ -83,8 +81,7 @@ public class InjectViewProcessor implements IClassTransformer {
       binder.extractAllBindings(candidateClass);
       final List<ViewBinding> viewBindings = binder.getViewBindings(candidateClass);
       final List<FragmentBinding> fragmentBindings = binder.getFragmentBindings(candidateClass);
-      boolean hasViewsOrFragments = !(viewBindings.isEmpty() && fragmentBindings.isEmpty());
-      boolean shouldTransform = hasViewsOrFragments;
+      boolean shouldTransform = !(viewBindings.isEmpty() && fragmentBindings.isEmpty());
       log.debug(
           "Class " + candidateClass.getSimpleName() + " will get transformed: " + shouldTransform);
       return shouldTransform;
@@ -98,30 +95,31 @@ public class InjectViewProcessor implements IClassTransformer {
   @Override
   public void applyTransformations(final CtClass classToTransform) throws JavassistBuildException {
     // Actually you must test if it exists, but it's just an example...
-    log.debug("Analyzing " + classToTransform.getSimpleName());
+    String classToTransformName = classToTransform.getSimpleName();
+    log.debug("Analyzing " + classToTransformName);
 
     try {
       final List<ViewBinding> viewBindings = binder.getViewBindings(classToTransform);
       final List<FragmentBinding> fragmentBindings = binder.getFragmentBindings(classToTransform);
 
       if (isActivity(classToTransform)) {
-        log.debug("Activity detected " + classToTransform.getSimpleName());
+        log.debug("Activity detected " + classToTransformName);
         injectStuffInActivity(classToTransform, viewBindings, fragmentBindings);
       } else if (isFragment(classToTransform) || isSupportFragment(classToTransform)) {
-        log.debug("Fragment detected " + classToTransform.getSimpleName());
+        log.debug("Fragment detected " + classToTransformName);
         injectStuffInFragment(classToTransform, viewBindings, fragmentBindings);
       } else if (isView(classToTransform)) {
-        log.debug("View detected " + classToTransform.getSimpleName());
+        log.debug("View detected " + classToTransformName);
         injectStuffInView(classToTransform, viewBindings);
       } else {
-        log.debug("Other class detected " + classToTransform.getSimpleName());
+        log.debug("Other class detected " + classToTransformName);
         // in other classes (like view holders)
         injectStuffInClass(classToTransform, viewBindings, fragmentBindings);
       }
-      log.debug("Class successfully transformed: " + classToTransform.getSimpleName());
+      log.debug("Class successfully transformed: " + classToTransformName);
     } catch (Throwable e) {
       log.error("Impossible to transform class." + classToTransform.getName(), e);
-      new JavassistBuildException(e);
+      throw new JavassistBuildException(e);
     }
   }
 
@@ -198,15 +196,15 @@ public class InjectViewProcessor implements IClassTransformer {
 
     // create or complete onViewCreated
     List<CtConstructor> constructorList =
-        JavassistUtils.extractValidConstructors(clazz, injectViewfilter);
+        JavassistUtils.extractValidConstructors(clazz, injectViewFilter);
     if (constructorList != null && !constructorList.isEmpty()) {
       log.debug("constructor : " + constructorList.toString());
       for (CtConstructor constructor : constructorList) {
         int indexValidParam =
-            findValidParamIndex(constructor.getParameterTypes(), injectViewfilter);
+            findValidParamIndex(constructor.getParameterTypes(), injectViewFilter);
         //indexValidParam is > 0 at this stage
         constructor.insertBeforeBody(
-            createInjectedBodyWithParam(clazz, constructor.getParameterTypes(), indexValidParam,
+            createInjectedBodyWithParam(constructor.getParameterTypes(), indexValidParam,
                 views, fragments));
       }
     } else {
@@ -221,12 +219,10 @@ public class InjectViewProcessor implements IClassTransformer {
       List<FragmentBinding> fragments, ContentViewBinding contentViewBinding)
       throws ClassNotFoundException, NotFoundException, JavassistBuildException {
 
-    return new StringBuilder().append(
-        "public void onCreate(android.os.Bundle savedInstanceState) { \n")
-        .append("super.onCreate(savedInstanceState);\n")
-        .append(createInjectedBody(clazz, views, fragments, contentViewBinding))
-        .append("}")
-        .toString();
+    return "public void onCreate(android.os.Bundle savedInstanceState) { \n"
+        + "super.onCreate(savedInstanceState);\n"
+        + createInjectedBody(clazz, views, fragments, contentViewBinding)
+        + "}";
   }
 
   private StringBuilder injectContentView(ContentViewBinding contentViewBinding,
@@ -238,7 +234,7 @@ public class InjectViewProcessor implements IClassTransformer {
       StringBuilder builder) throws ClassNotFoundException, NotFoundException {
 
     for (FragmentBinding fragmentBinding : fragmentBindings) {
-      new FindFragmentStatementInActivityOrFragment(fragmentBinding).append(builder);
+      new FindFragmentStatement(fragmentBinding).append(builder);
     }
     return builder;
   }
@@ -247,7 +243,7 @@ public class InjectViewProcessor implements IClassTransformer {
       int indexParam, StringBuilder builder) throws ClassNotFoundException, NotFoundException {
 
     for (FragmentBinding fragmentBinding : fragmentBindings) {
-      new FindFragmentStatementForParam(fragmentBinding, indexParam).append(builder);
+      new FindFragmentStatement(fragmentBinding, indexParam).append(builder);
     }
     return builder;
   }
@@ -256,7 +252,7 @@ public class InjectViewProcessor implements IClassTransformer {
       StringBuilder builder) throws ClassNotFoundException, NotFoundException {
 
     for (ViewBinding viewBinding : viewBindings) {
-      new FindViewStatementInActivityOrFragmentOrView(targetClazz, viewBinding).append(builder);
+      new FindViewStatement(targetClazz, viewBinding).append(builder);
     }
     return builder;
   }
@@ -266,7 +262,7 @@ public class InjectViewProcessor implements IClassTransformer {
       throws ClassNotFoundException, NotFoundException {
 
     for (ViewBinding viewBinding : viewBindings) {
-      new FindViewStatementForParam(viewBinding, paramClasses, indexParam).append(builder);
+      new FindViewStatement(viewBinding, paramClasses, indexParam).append(builder);
     }
     return builder;
   }
@@ -311,13 +307,11 @@ public class InjectViewProcessor implements IClassTransformer {
     return builder.toString();
   }
 
-  private String createInjectedBodyWithParam(CtClass clazz, CtClass[] paramClasses, int indexParam,
+  private String createInjectedBodyWithParam(CtClass[] paramClasses, int indexParam,
       List<ViewBinding> viewBindings, List<FragmentBinding> fragmentBindings)
       throws ClassNotFoundException, NotFoundException {
 
     StringBuilder builder = new StringBuilder();
-    String message = String.format("Class %s has been enhanced.", clazz.getName());
-    builder.append("android.util.Log.d(\"RoboGuice post-processor\",\"" + message + "\");\n");
 
     if (!viewBindings.isEmpty()) {
       injectViewStatementsForParam(viewBindings, paramClasses, indexParam, builder);

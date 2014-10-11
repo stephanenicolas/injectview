@@ -4,14 +4,20 @@ import com.github.stephanenicolas.injectview.binding.FragmentBinding;
 import javassist.NotFoundException;
 
 /**
- * Created by administrateur on 2014-10-10.
+ * A statement to find/retrieve a fragment.
+ * Created by SNI.
  */
-public abstract class FindFragmentStatement extends FindStatement {
+public class FindFragmentStatement extends FindStatement {
   protected String root;
 
-  public FindFragmentStatement(String root, FragmentBinding fragmentBinding) {
+  public FindFragmentStatement(FragmentBinding fragmentBinding, int indexParam) {
     super(fragmentBinding);
-    this.root = root;
+    this.root = "$" + (1 + indexParam);
+  }
+
+  public FindFragmentStatement(FragmentBinding fragmentBinding) {
+    super(fragmentBinding);
+    this.root = "this";
   }
 
   @Override public StringBuilder append(StringBuilder builder) throws NotFoundException {
@@ -37,7 +43,7 @@ public abstract class FindFragmentStatement extends FindStatement {
         .append(findFragmentString)
         .append(";\n");
 
-    checkNullable(builder, binding);
+    checkNullable(binding, builder);
 
     return builder;
   }
