@@ -68,15 +68,13 @@ public class Binder {
     List<ViewBinding> viewBindings = new ArrayList<>();
 
     for (CtField field : views) {
+      String fieldName = field.getName();
+      String fieldTypeName = field.getType().getName();
       final int id = extractIdFromAnnotation(field, InjectView.class);
       final String tag = extractTagFromAnnotation(field, InjectView.class);
-
       boolean nullable = NullableUtils.isNullable(field);
 
-      ViewBinding viewBinding =
-          new ViewBinding(field.getName(), field.getType().getName(), id, tag, nullable);
-
-      viewBindings.add(viewBinding);
+      viewBindings.add(new ViewBinding(fieldName, fieldTypeName, id, tag, nullable));
     }
     return viewBindings;
   }
@@ -89,18 +87,15 @@ public class Binder {
     List<FragmentBinding> fragmentBindings = new ArrayList<>();
 
     for (CtField field : views) {
+      String fieldName = field.getName();
+      String fieldTypeName = field.getType().getName();
       final int id = extractIdFromAnnotation(field, InjectFragment.class);
       final String tag = extractTagFromAnnotation(field, InjectFragment.class);
-
       boolean nullable = NullableUtils.isNullable(field);
-
       boolean isSupportFragment = isSupportFragment(field.getType());
 
-      FragmentBinding fragmentBinding =
-          new FragmentBinding(field.getName(), field.getType().getName(), id, tag, nullable,
-              isSupportFragment);
-
-      fragmentBindings.add(fragmentBinding);
+      fragmentBindings.add(new FragmentBinding(fieldName, fieldTypeName, id, tag, nullable,
+          isSupportFragment));
     }
     return fragmentBindings;
   }

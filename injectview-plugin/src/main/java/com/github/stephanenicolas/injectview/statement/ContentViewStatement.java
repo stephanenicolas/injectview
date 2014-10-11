@@ -1,9 +1,12 @@
 package com.github.stephanenicolas.injectview.statement;
 
+import com.github.stephanenicolas.injectview.ContentView;
 import com.github.stephanenicolas.injectview.binding.ContentViewBinding;
 
 /**
- * Created by administrateur on 2014-10-10.
+ * A statement to install the main layout of an activity.
+ * Will issue a java statement matching its {@link ContentView} annotation.
+ * @author SNI
  */
 public class ContentViewStatement extends Statement<ContentViewBinding> {
 

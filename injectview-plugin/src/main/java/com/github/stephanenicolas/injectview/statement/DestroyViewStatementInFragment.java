@@ -1,10 +1,13 @@
 package com.github.stephanenicolas.injectview.statement;
 
+import com.github.stephanenicolas.injectview.ContentView;
 import com.github.stephanenicolas.injectview.binding.FieldBinding;
 import com.github.stephanenicolas.injectview.binding.ViewBinding;
 
 /**
- * Created by administrateur on 2014-10-10.
+ * A statement to assign to null all views of a fragment.
+ * This statement is needed to prevent context leaks owned by views of a dead fragment.
+ * @author SNI
  */
 public class DestroyViewStatementInFragment extends Statement<FieldBinding> {
 

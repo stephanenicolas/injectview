@@ -252,7 +252,7 @@ public class InjectViewProcessor implements IClassTransformer {
       StringBuilder builder) throws ClassNotFoundException, NotFoundException {
 
     for (ViewBinding viewBinding : viewBindings) {
-      new FindViewStatement(targetClazz, viewBinding).append(builder);
+      new FindViewStatement(viewBinding, targetClazz).append(builder);
     }
     return builder;
   }
