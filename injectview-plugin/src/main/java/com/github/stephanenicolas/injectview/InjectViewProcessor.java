@@ -103,16 +103,16 @@ public class InjectViewProcessor implements IClassTransformer {
       final List<FragmentBinding> fragmentBindings = binder.getFragmentBindings(classToTransform);
 
       if (isActivity(classToTransform)) {
-        log.debug("Activity detected " + classToTransformName);
+        log.debug("Activity detected %s", classToTransformName);
         injectStuffInActivity(classToTransform, viewBindings, fragmentBindings);
       } else if (isFragment(classToTransform) || isSupportFragment(classToTransform)) {
-        log.debug("Fragment detected " + classToTransformName);
+        log.debug("Fragment detected %s", classToTransformName);
         injectStuffInFragment(classToTransform, viewBindings, fragmentBindings);
       } else if (isView(classToTransform)) {
-        log.debug("View detected " + classToTransformName);
+        log.debug("View detected %s", classToTransformName);
         injectStuffInView(classToTransform, viewBindings);
       } else {
-        log.debug("Other class detected " + classToTransformName);
+        log.debug("Other class detected %s", classToTransformName);
         // in other classes (like view holders)
         injectStuffInClass(classToTransform, viewBindings, fragmentBindings);
       }
